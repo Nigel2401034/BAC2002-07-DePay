@@ -1,24 +1,34 @@
-const { MongoClient, ObjectId } = require('mongodb');
+const { MongoClient, ObjectId } = require("mongodb");
 
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://root:password@localhost:27018/listings';
-const DB_NAME = 'listings';
-const COLLECTION_NAME = 'listings';
+const MONGO_URI =
+  process.env.MONGODB_URI || "mongodb://root:password@localhost:27018/listings";
+const DB_NAME = "listings";
+const COLLECTION_NAME = "listings";
+const ORDERS_COLLECTION_NAME = "escrow_orders";
 
 let db;
 let client;
 
 async function connectDB() {
   if (db) return db;
-  
+
   try {
     client = new MongoClient(MONGO_URI);
     await client.connect();
     db = client.db(DB_NAME);
-    await db.collection(COLLECTION_NAME).createIndex({ seedKey: 1 }, { unique: true, sparse: true });
-    console.log('✅ Connected to MongoDB');
+    await db
+      .collection(COLLECTION_NAME)
+      .createIndex({ seedKey: 1 }, { unique: true, sparse: true });
+    await db
+      .collection(ORDERS_COLLECTION_NAME)
+      .createIndex({ buyerWallet: 1, createdAt: -1 });
+    await db
+      .collection(ORDERS_COLLECTION_NAME)
+      .createIndex({ txHash: 1 }, { unique: true });
+    console.log("✅ Connected to MongoDB");
     return db;
   } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
+    console.error("❌ MongoDB connection error:", error);
     throw error;
   }
 }
@@ -28,7 +38,7 @@ async function createListing(listingData) {
   const result = await collection.insertOne({
     ...listingData,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
   });
   return result.insertedId;
 }
@@ -45,14 +55,16 @@ async function getListingById(id) {
 
 async function getListingsBySellerWallet(sellerWallet) {
   const collection = db.collection(COLLECTION_NAME);
-  return await collection.find({ sellerWallet: sellerWallet.toLowerCase() }).toArray();
+  return await collection
+    .find({ sellerWallet: sellerWallet.toLowerCase() })
+    .toArray();
 }
 
 async function updateListing(id, updateData) {
   const collection = db.collection(COLLECTION_NAME);
   const result = await collection.updateOne(
     { _id: new ObjectId(id) },
-    { $set: { ...updateData, updatedAt: new Date() } }
+    { $set: { ...updateData, updatedAt: new Date() } },
   );
   return result.modifiedCount > 0;
 }
@@ -77,26 +89,64 @@ async function upsertListingBySeedKey(seedKey, listingData) {
       $set: {
         ...listingData,
         seedKey,
-        updatedAt: now
+        updatedAt: now,
       },
       $setOnInsert: {
-        createdAt: now
-      }
+        createdAt: now,
+      },
     },
-    { upsert: true }
+    { upsert: true },
   );
 
   if (result.upsertedCount > 0) {
-    return { action: 'inserted', upsertedId: result.upsertedId };
+    return { action: "inserted", upsertedId: result.upsertedId };
   }
 
-  return { action: 'updated' };
+  return { action: "updated" };
+}
+
+async function createEscrowOrder(orderData) {
+  const collection = db.collection(ORDERS_COLLECTION_NAME);
+  const result = await collection.insertOne({
+    ...orderData,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    status: "funded",
+  });
+  return result.insertedId;
+}
+
+async function getEscrowOrdersByBuyer(buyerWallet) {
+  const collection = db.collection(ORDERS_COLLECTION_NAME);
+  return await collection
+    .find({ buyerWallet: buyerWallet.toLowerCase() })
+    .sort({ createdAt: -1 })
+    .toArray();
+}
+
+async function getEscrowOrderById(orderId) {
+  const collection = db.collection(ORDERS_COLLECTION_NAME);
+  return await collection.findOne({ _id: new ObjectId(orderId) });
+}
+
+async function updateEscrowOrder(orderId, updateData) {
+  const collection = db.collection(ORDERS_COLLECTION_NAME);
+  const result = await collection.updateOne(
+    { _id: new ObjectId(orderId) },
+    { $set: { ...updateData, updatedAt: new Date() } },
+  );
+  return result.modifiedCount > 0;
+}
+
+async function getEscrowOrderByTxHash(txHash) {
+  const collection = db.collection(ORDERS_COLLECTION_NAME);
+  return await collection.findOne({ txHash: txHash.toLowerCase() });
 }
 
 async function closeDB() {
   if (client) {
     await client.close();
-    console.log('MongoDB connection closed');
+    console.log("MongoDB connection closed");
   }
 }
 
@@ -110,5 +160,10 @@ module.exports = {
   updateListing,
   deleteListing,
   getListingsCollection,
-  upsertListingBySeedKey
+  upsertListingBySeedKey,
+  createEscrowOrder,
+  getEscrowOrdersByBuyer,
+  getEscrowOrderById,
+  updateEscrowOrder,
+  getEscrowOrderByTxHash,
 };

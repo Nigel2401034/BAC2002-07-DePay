@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DePay Buyer - Cart</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+    <div id="buyerNavbarMount"></div>
+
+    <main class="container">
+      <header class="hero">
+        <p class="kicker">DePay Buyer</p>
+        <h1>Your Cart</h1>
+        <p class="muted">Select items to checkout.</p>
+      </header>
+
+      <section class="card">
+        <div
+          class="actions"
+          style="justify-content: space-between; align-items: center"
+        >
+          <div class="actions">
+            <button type="button" id="selectAllCartBtn">Select All</button>
+            <button
+              type="button"
+              id="clearSelectionCartBtn"
+              class="button-link"
+            >
+              Clear Selection
+            </button>
+          </div>
+          <button type="button" id="clearCartBtn" class="button-link">
+            Clear Cart
+          </button>
+        </div>
+
+        <p id="cartStatus" class="status"></p>
+        <div
+          id="cartList"
+          class="result"
+          style="border-top: none; padding-top: 0.25rem"
+        >
+          <p class="muted">Loading cart...</p>
+        </div>
+
+        <div class="cart-summary">
+          <p id="cartSelectionSummary" class="muted">0 selected</p>
+          <button type="button" id="checkoutSelectedBtn">
+            Checkout Selected
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script src="../config.js"></script>
+    <script src="../app.js"></script>
+    <script src="./navbar.js"></script>
+    <script src="./buyer.js"></script>
+    <script src="./cart.js"></script>
+  </body>
+</html>
