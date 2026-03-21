@@ -19,13 +19,6 @@ function getListingId(listing) {
   return "";
 }
 
-function formatDate(value) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString();
-}
-
 function renderListings(listings) {
   if (!Array.isArray(listings) || listings.length === 0) {
     listingsContainer.innerHTML = "<p class=\"muted\">No listings found.</p>";
@@ -40,7 +33,7 @@ function renderListings(listings) {
       const title = listing.title || "Untitled";
       const price = Number(listing.priceXsgd || 0).toFixed(2);
       const listingId = getListingId(listing);
-      const detailsUrl = `./listingdetails.html?id=${encodeURIComponent(listingId)}`;
+      const detailsUrl = `./buyerlistingdetails.html?id=${encodeURIComponent(listingId)}`;
       const fallbackImage = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='360'><rect width='100%' height='100%' fill='%230d1f2f'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239fb4c8' font-size='24'>No Image</text></svg>";
       const imageUrl = listing.imageCid
         ? `${window.APP_CONFIG.ipfsGatewayBase}${listing.imageCid}`

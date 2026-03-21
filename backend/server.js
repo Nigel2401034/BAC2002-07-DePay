@@ -47,6 +47,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../ui/index.html'));
 });
 
+// Serve buyer landing page
+app.get('/buyer', (req, res) => {
+  res.sendFile(path.join(__dirname, '../ui/buyer/buyer.html'));
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('⚠️ Unhandled error:', err.message);
