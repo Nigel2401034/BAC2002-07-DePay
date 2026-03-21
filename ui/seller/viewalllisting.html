@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>DePay Seller - All Listings</title>
+		<link rel="stylesheet" href="../style.css" />
+	</head>
+	<body>
+		<div id="sellerNavbarMount"></div>
+
+		<main class="container">
+			<header class="hero">
+				<p class="kicker">DePay Seller</p>
+				<h1>All Listings</h1>
+				<p class="muted">Browse all available listings from the database.</p>
+			</header>
+
+			<section class="card">
+				<div class="actions" style="justify-content: space-between; align-items: center;">
+					<p id="allListingsCount" class="muted" style="margin: 0;">Loading listings...</p>
+					<button type="button" id="refreshListingsBtn">Refresh</button>
+				</div>
+
+				<p id="allListingsStatus" class="status"></p>
+
+				<div id="allListingsContainer" class="result" style="border-top: none; padding-top: 0.25rem;">
+					<p class="muted">Loading...</p>
+				</div>
+			</section>
+		</main>
+
+		<script src="../config.js"></script>
+		<script src="../app.js"></script>
+		<script src="./navbar.js"></script>
+		<script src="./seller.js"></script>
+		<script src="./viewalllisting.js"></script>
+	</body>
+</html>

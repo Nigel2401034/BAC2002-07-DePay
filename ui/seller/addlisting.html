@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>DePay Seller - New Listing</title>
+		<link rel="stylesheet" href="../style.css" />
+	</head>
+	<body>
+		<div id="sellerNavbarMount"></div>
+
+		<main class="container">
+			<header class="hero">
+				<p class="kicker">DePay Seller</p>
+				<h1>New Listing</h1>
+				<p class="muted">Create a listing and upload listing metadata to IPFS through the backend.</p>
+			</header>
+
+			<section class="card" id="walletVerifyCard">
+				<h2>Wallet Verification</h2>
+				<p class="muted">Connect MetaMask before creating a listing.</p>
+				<div class="actions">
+					<button type="button" id="verifyConnectBtn">Connect MetaMask</button>
+				</div>
+				<p id="walletVerifyStatus" class="status">Checking wallet connection...</p>
+			</section>
+
+			<section class="card">
+				<h2>Listing Details</h2>
+				<form id="newListingForm" class="form-grid">
+					<label>
+						Product Name
+						<input name="title" required placeholder="Wireless Earbuds" />
+					</label>
+
+					<label>
+						Price (XSGD)
+						<input name="priceXsgd" type="number" step="0.01" min="0.01" required placeholder="49.90" />
+					</label>
+
+					<label class="span-2">
+						Description
+						<textarea name="description" rows="4" required placeholder="Product description, warranty and shipping notes."></textarea>
+					</label>
+
+					<label class="span-2">
+						Product Image (optional)
+						<input name="image" type="file" accept="image/*" />
+					</label>
+
+					<div class="span-2 actions">
+						<button type="submit" id="createListingBtn">Create Listing</button>
+					</div>
+				</form>
+
+				<p id="addListingStatus" class="status"></p>
+
+				<div id="addListingResult" class="result" hidden>
+					<p><strong>Mongo ID:</strong> <span id="listingMongoId"></span></p>
+					<p><strong>IPFS CID:</strong> <a id="listingCidLink" href="#" target="_blank" rel="noopener noreferrer"></a></p>
+				</div>
+			</section>
+		</main>
+
+		<script src="../config.js"></script>
+		<script src="../app.js"></script>
+		<script src="./navbar.js"></script>
+		<script src="./seller.js"></script>
+		<script src="./addlisting.js"></script>
+	</body>
+</html>

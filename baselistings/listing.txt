@@ -1,0 +1,19 @@
+    "title": "Mechanical Keyboard",
+    "description": "Compact mechanical keyboard with tactile switches and white backlight.",
+    "priceXsgd": 79.9,
+    "category": "Electronics",
+    "imageFile": "keyboard.jpg",
+
+    "title": "Leather Wallet",
+    "description": "Slim bi-fold leather wallet with multiple card slots and cash compartment.",
+    "priceXsgd": 29.5,
+    "category": "Accessories",
+    "imageFile": "wallet.jpg",
+    "ipfsCid": "QmXqmfPjhbP8WnHqjrZLGzmpR3JfJFXzyoENaToyBKUTiv"
+
+    "title": "Premium Walnut",
+    "description": "Fresh premium walnuts packed in a resealable pouch.",
+    "priceXsgd": 12,
+    "category": "Groceries",
+    "imageFile": "walnut.jpg",
+    "ipfsCid": "QmXYcTLnnQQM4xpXFkEgcbMWn1kvc1i8CFDfLiznbP5kXK"
