@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DePay Buyer - Track Orders</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+    <div id="buyerNavbarMount"></div>
+
+    <main class="container">
+      <header class="hero">
+        <p class="kicker">DePay Buyer</p>
+        <h1>Track Orders</h1>
+        <p class="muted">
+          View your escrow orders and release funds after receiving items.
+        </p>
+      </header>
+
+      <section class="card">
+        <div
+          class="actions"
+          style="justify-content: space-between; align-items: center"
+        >
+          <p id="ordersCount" class="muted" style="margin: 0">
+            Loading orders...
+          </p>
+          <button type="button" id="refreshOrdersBtn">Refresh</button>
+        </div>
+
+        <p id="ordersStatus" class="status"></p>
+        <div
+          id="ordersList"
+          class="result"
+          style="border-top: none; padding-top: 0.25rem"
+        >
+          <p class="muted">Loading your orders...</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="../config.js"></script>
+    <script src="../app.js"></script>
+    <script src="./navbar.js"></script>
+    <script src="./buyer.js"></script>
+    <script src="./trackorders.js"></script>
+  </body>
+</html>

@@ -1,18 +1,45 @@
 function initBuyerNavbar(root = document) {
-  const connectWalletBtn = root.getElementById("connectWalletBtn") || document.getElementById("connectWalletBtn");
-  const walletStatus = root.getElementById("walletStatus") || document.getElementById("walletStatus");
-  const walletMenuLabel = root.getElementById("walletMenuLabel") || document.getElementById("walletMenuLabel");
+  const connectWalletBtn =
+    root.getElementById("connectWalletBtn") ||
+    document.getElementById("connectWalletBtn");
+  const walletStatus =
+    root.getElementById("walletStatus") ||
+    document.getElementById("walletStatus");
+  const walletMenuLabel =
+    root.getElementById("walletMenuLabel") ||
+    document.getElementById("walletMenuLabel");
+  const cartNavLink =
+    root.getElementById("buyerCartNavLink") ||
+    document.getElementById("buyerCartNavLink");
 
   const walletApi = window.DepayWallet;
+  const cartStorageKey = "buyerCartItems";
 
   if (!connectWalletBtn || !walletStatus || !walletMenuLabel) {
     return;
   }
 
+  function renderCartCount() {
+    if (!cartNavLink) return;
+    try {
+      const raw = localStorage.getItem(cartStorageKey);
+      const items = raw ? JSON.parse(raw) : [];
+      const totalItems = Array.isArray(items)
+        ? items.reduce((sum, item) => sum + Number(item.quantity || 1), 0)
+        : 0;
+      cartNavLink.textContent =
+        totalItems > 0 ? `Cart (${totalItems})` : "Cart";
+    } catch {
+      cartNavLink.textContent = "Cart";
+    }
+  }
+
   function renderWallet(wallet) {
     const connected = Boolean(wallet);
 
-    walletMenuLabel.textContent = `MetaMask: ${connected ? "Connected" : "Disconnected"}`;
+    walletMenuLabel.textContent = `MetaMask: ${
+      connected ? "Connected" : "Disconnected"
+    }`;
 
     if (!connected) {
       walletStatus.hidden = true;
@@ -34,7 +61,9 @@ function initBuyerNavbar(root = document) {
     }
 
     try {
-      const accounts = await window.ethereum.request({ method: "eth_accounts" });
+      const accounts = await window.ethereum.request({
+        method: "eth_accounts",
+      });
       const providerWallet = accounts && accounts[0] ? accounts[0] : "";
 
       if (walletApi) {
@@ -72,7 +101,16 @@ function initBuyerNavbar(root = document) {
 
   const savedWallet = walletApi ? walletApi.getSavedWallet() : "";
   renderWallet(savedWallet);
+  renderCartCount();
   syncWalletFromProvider();
+
+  window.addEventListener("storage", (event) => {
+    if (event.key === cartStorageKey) {
+      renderCartCount();
+    }
+  });
+
+  document.addEventListener("buyer-cart-updated", renderCartCount);
 
   if (window.ethereum) {
     window.ethereum.on("accountsChanged", (accounts) => {

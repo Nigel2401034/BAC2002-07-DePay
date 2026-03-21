@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DePay Buyer - Checkout</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+    <div id="buyerNavbarMount"></div>
+
+    <main class="container">
+      <header class="hero">
+        <p class="kicker">DePay Buyer</p>
+        <h1>Checkout</h1>
+        <p class="muted">
+          Billing, shipping, and blockchain payment via MetaMask.
+        </p>
+      </header>
+
+      <section class="card">
+        <h2>Selected Items</h2>
+        <p id="checkoutStatus" class="status"></p>
+        <div
+          id="checkoutItems"
+          class="result"
+          style="border-top: none; padding-top: 0.25rem"
+        >
+          <p class="muted">Loading selected items...</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Billing Information</h2>
+        <form id="billingForm" class="form-grid" novalidate>
+          <label>
+            Full Name
+            <input type="text" name="fullName" required />
+          </label>
+          <label>
+            Email
+            <input type="email" name="email" required />
+          </label>
+          <label class="span-2">
+            Billing Address
+            <input type="text" name="billingAddress" required />
+          </label>
+          <label>
+            City
+            <input type="text" name="billingCity" required />
+          </label>
+          <label>
+            Postal Code
+            <input type="text" name="billingPostalCode" required />
+          </label>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Shipping Information</h2>
+        <form id="shippingForm" class="form-grid" novalidate>
+          <label>
+            Recipient Name
+            <input type="text" name="recipientName" required />
+          </label>
+          <label>
+            Phone
+            <input type="text" name="phone" required />
+          </label>
+          <label class="span-2">
+            Shipping Address
+            <input type="text" name="shippingAddress" required />
+          </label>
+          <label>
+            City
+            <input type="text" name="shippingCity" required />
+          </label>
+          <label>
+            Postal Code
+            <input type="text" name="shippingPostalCode" required />
+          </label>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Blockchain Payment</h2>
+        <p class="muted">
+          Connect MetaMask, then pay the selected items on-chain.
+        </p>
+        <div class="checkout-pay-row">
+          <p id="checkoutTotal" class="checkout-total">Total: 0.00 XSGD</p>
+          <button type="button" id="payNowBtn">Pay With MetaMask</button>
+        </div>
+        <div id="paymentResult" class="result"></div>
+      </section>
+    </main>
+
+    <script src="../config.js"></script>
+    <script src="../app.js"></script>
+    <script src="./navbar.js"></script>
+    <script src="./buyer.js"></script>
+    <script src="./checkout.js"></script>
+  </body>
+</html>
