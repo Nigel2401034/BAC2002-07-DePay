@@ -5,6 +5,7 @@ const walletVerifyStatus = document.getElementById("walletVerifyStatus");
 const statusEl = document.getElementById("addListingStatus");
 const resultBox = document.getElementById("addListingResult");
 const mongoIdEl = document.getElementById("listingMongoId");
+const detailsLinkEl = document.getElementById("listingDetailsLink");
 const cidLinkEl = document.getElementById("listingCidLink");
 
 const API_BASE_URL = "http://localhost:5000/api/listings";
@@ -84,6 +85,9 @@ listingForm?.addEventListener("submit", async (event) => {
 
     setStatus("Listing created successfully.", "ok");
     mongoIdEl.textContent = payload.listingId;
+    const detailsUrl = `./sellerlistingdetails.html?id=${encodeURIComponent(payload.listingId)}`;
+    detailsLinkEl.textContent = detailsUrl;
+    detailsLinkEl.href = detailsUrl;
     cidLinkEl.textContent = payload.ipfsCid;
     cidLinkEl.href = `${window.APP_CONFIG.ipfsGatewayBase}${payload.ipfsCid}`;
     resultBox.hidden = false;

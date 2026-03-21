@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>DePay Seller - All Listings</title>
+		<title>DePay Seller - Listing Details</title>
 		<link rel="stylesheet" href="../style.css" />
 	</head>
 	<body>
@@ -12,19 +12,19 @@
 		<main class="container">
 			<header class="hero">
 				<p class="kicker">DePay Seller</p>
-				<h1>All Listings</h1>
-				<p class="muted">Browse all available listings from the database.</p>
+				<h1>Listing Details</h1>
+				<p id="listingDetailsSubtitle" class="muted">Loading listing...</p>
 			</header>
 
 			<section class="card">
 				<div class="actions" style="justify-content: space-between; align-items: center;">
-					<p id="allListingsCount" class="muted" style="margin: 0;">Loading listings...</p>
-					<button type="button" id="refreshListingsBtn">Refresh</button>
+					<a class="button-link" href="./sellerviewalllisting.html">Back to All Listings</a>
+					<button type="button" id="reloadListingBtn">Reload</button>
 				</div>
 
-				<p id="allListingsStatus" class="status"></p>
+				<p id="listingDetailsStatus" class="status"></p>
 
-				<div id="allListingsContainer" class="result" style="border-top: none; padding-top: 0.25rem;">
+				<div id="listingDetailsBody" class="result" style="border-top: none; padding-top: 0.25rem;">
 					<p class="muted">Loading...</p>
 				</div>
 			</section>
@@ -34,6 +34,6 @@
 		<script src="../app.js"></script>
 		<script src="./navbar.js"></script>
 		<script src="./seller.js"></script>
-		<script src="./viewalllisting.js"></script>
+		<script src="./sellerlistingdetails.js"></script>
 	</body>
 </html>
