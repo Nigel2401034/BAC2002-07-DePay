@@ -21,7 +21,9 @@
   },
   "scripts": {
     "backend": "node backend/server.js",
-    "backend:dev": "nodemon backend/server.js"
+    "backend:dev": "nodemon backend/server.js",
+    "oracle": "node oracle/oracle.js",
+    "oracle:dev": "nodemon oracle/oracle.js"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.9.6",

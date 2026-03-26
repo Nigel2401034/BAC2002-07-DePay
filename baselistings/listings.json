@@ -1,0 +1,30 @@
+[
+  {
+    "seedKey": "seed-listing-1",
+    "title": "Mechanical Keyboard",
+    "description": "Compact mechanical keyboard with tactile switches and white backlight.",
+    "priceXsgd": 79.9,
+    "category": "Electronics",
+    "imageFile": "keyboard.jpg",
+    "sellerWallet": "0x67b95E2E3736C90Ed86861FA1e6Ad04EBAC9b8CE"
+  },
+  {
+    "seedKey": "seed-listing-2",
+    "title": "Leather Wallet",
+    "description": "Slim bi-fold leather wallet with multiple card slots.",
+    "priceXsgd": 29.5,
+    "category": "Accessories",
+    "imageFile": "wallet.jpg",
+    "sellerWallet": "0x67b95E2E3736C90Ed86861FA1e6Ad04EBAC9b8CE"
+  },
+  {
+    "seedKey": "seed-listing-3",
+    "title": "Premium Walnut",
+    "description": "Fresh premium walnuts packed in a resealable pouch.",
+    "priceXsgd": 12,
+    "category": "Groceries",
+    "imageFile": "walnut.jpg",
+    "sellerWallet": "0x67b95E2E3736C90Ed86861FA1e6Ad04EBAC9b8CE"
+  }
+]
+

@@ -606,6 +606,102 @@ label {
 	border: 1px solid rgba(159, 180, 200, 0.5);
 }
 
+.badge-shipped {
+	background: rgba(78, 207, 255, 0.18);
+	color: #4ecfff;
+	border: 1px solid rgba(78, 207, 255, 0.45);
+}
+
+.badge-delivered {
+	background: rgba(0, 209, 178, 0.18);
+	color: #00d1b2;
+	border: 1px solid rgba(0, 209, 178, 0.45);
+}
+
+/* ── Tracking timeline ─────────────────────────────────────── */
+.tracking-timeline {
+	display: flex;
+	align-items: flex-start;
+	margin: 0.75rem 0 0.5rem;
+	position: relative;
+}
+
+.tracking-step {
+	flex: 1;
+	text-align: center;
+	position: relative;
+	padding-top: 0.4rem;
+}
+
+/* Connector line between steps */
+.tracking-step:not(:first-child)::before {
+	content: "";
+	position: absolute;
+	top: calc(0.4rem + 7px);
+	right: 50%;
+	left: -50%;
+	height: 2px;
+	background: var(--line);
+	z-index: 0;
+}
+
+.tracking-step.ts-done:not(:first-child)::before,
+.tracking-step.ts-active:not(:first-child)::before {
+	background: var(--accent);
+}
+
+/* Dot */
+.tracking-dot {
+	display: block;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	border: 2px solid var(--line);
+	background: #0d1f2f;
+	margin: 0 auto 0.3rem;
+	position: relative;
+	z-index: 1;
+}
+
+.tracking-step.ts-done .tracking-dot {
+	border-color: #9bf4b1;
+	background: #9bf4b1;
+}
+
+.tracking-step.ts-active .tracking-dot {
+	border-color: var(--accent);
+	background: var(--accent);
+	box-shadow: 0 0 6px rgba(0, 209, 178, 0.6);
+}
+
+.tracking-label {
+	font-size: 0.76rem;
+	color: var(--muted);
+	display: block;
+	white-space: nowrap;
+}
+
+.tracking-step.ts-done .tracking-label,
+.tracking-step.ts-active .tracking-label {
+	color: var(--text);
+}
+
+/* Simulate button */
+.btn-simulate {
+	background: linear-gradient(90deg, #00527a, #0077b6);
+	border-color: #0096c7;
+	color: #caf0f8;
+	font-size: 0.85rem;
+	padding: 0.5rem 1rem;
+	cursor: pointer;
+	border-radius: 10px;
+	font-weight: 600;
+}
+
+.btn-simulate:hover {
+	opacity: 0.85;
+}
+
 .order-items {
 	margin-bottom: 0.6rem;
 	padding: 0.6rem;

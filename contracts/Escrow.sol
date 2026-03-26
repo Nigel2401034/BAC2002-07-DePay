@@ -16,6 +16,7 @@ contract DePayEscrow is ReentrancyGuard {
     }
 
     address public immutable owner;
+    address public oracle;
     uint256 public nextEscrowId;
 
     mapping(uint256 => Escrow) private escrows;
@@ -30,11 +31,13 @@ contract DePayEscrow is ReentrancyGuard {
 
     event EscrowReleased(uint256 indexed escrowId);
     event EscrowRefunded(uint256 indexed escrowId);
+    event OracleSet(address indexed newOracle);
 
     error ZeroAddress();
     error ZeroAmount();
     error NotOwner();
     error NotBuyer();
+    error NotOracle();
     error InvalidStatus();
     error EscrowNotFound();
     error TransferFailed();
@@ -43,6 +46,26 @@ contract DePayEscrow is ReentrancyGuard {
         if (_owner == address(0)) revert ZeroAddress();
         owner = _owner;
     }
+
+    modifier onlyOracle() {
+        if (msg.sender != oracle) revert NotOracle();
+        _;
+    }
+
+    // -----------------------------------------------------------------------
+    // Owner functions
+    // -----------------------------------------------------------------------
+
+    function setOracle(address _oracle) external {
+        if (msg.sender != owner) revert NotOwner();
+        if (_oracle == address(0)) revert ZeroAddress();
+        oracle = _oracle;
+        emit OracleSet(_oracle);
+    }
+
+    // -----------------------------------------------------------------------
+    // Buyer functions
+    // -----------------------------------------------------------------------
 
     function createEscrow(
         address seller,
@@ -90,6 +113,31 @@ contract DePayEscrow is ReentrancyGuard {
         emit EscrowReleased(escrowId);
     }
 
+    // -----------------------------------------------------------------------
+    // Oracle function — releases funds to seller without requiring buyer
+    // -----------------------------------------------------------------------
+
+    function oracleRelease(uint256 escrowId) external nonReentrant onlyOracle {
+        Escrow storage e = escrows[escrowId];
+
+        if (e.buyer == address(0)) revert EscrowNotFound();
+        if (e.status != STATUS_FUNDED) revert InvalidStatus();
+
+        address seller = e.seller;
+        uint128 amount = e.amount;
+
+        e.status = STATUS_RELEASED;
+
+        (bool success, ) = payable(seller).call{value: amount}("");
+        if (!success) revert TransferFailed();
+
+        emit EscrowReleased(escrowId);
+    }
+
+    // -----------------------------------------------------------------------
+    // Owner admin — refund to buyer
+    // -----------------------------------------------------------------------
+
     function refundEscrow(uint256 escrowId) external nonReentrant {
         Escrow storage e = escrows[escrowId];
 
@@ -107,6 +155,10 @@ contract DePayEscrow is ReentrancyGuard {
 
         emit EscrowRefunded(escrowId);
     }
+
+    // -----------------------------------------------------------------------
+    // View
+    // -----------------------------------------------------------------------
 
     function getEscrow(uint256 escrowId)
         external
