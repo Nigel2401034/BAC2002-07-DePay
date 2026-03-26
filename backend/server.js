@@ -5,6 +5,8 @@ const path = require("path");
 const db = require("./db");
 const listingsRouter = require("./routes");
 const ordersRouter = require("./orders-routes");
+const oracleRouter = require("../oracle/oracle-routes");
+const { seedListingsOnStartup } = require('./seed-listings');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -46,6 +48,7 @@ app.get("/health", (req, res) => {
 // API Routes
 app.use("/api/listings", listingsRouter);
 app.use("/api/orders", ordersRouter);
+app.use("/api/oracle", oracleRouter);
 
 // Serve index.html for root path
 app.get("/", (req, res) => {
@@ -75,7 +78,7 @@ app.use((req, res) => {
 async function start() {
   try {
     await initializeDB();
-
+    await seedListingsOnStartup();
     app.listen(PORT, () => {
       console.log("\n" + "=".repeat(60));
       console.log("🚀 DePay App Started");
