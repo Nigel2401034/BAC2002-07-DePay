@@ -17,7 +17,7 @@ function setStatus(message, type = "") {
 }
 
 function getSellerWallet() {
-  return window.DepayWallet ? window.DepayWallet.getSavedWallet() : "";
+  return window.DepayWallet ? window.DepayWallet.getSavedWallet("seller") : "";
 }
 
 function setWalletVerifyStatus(message, type = "") {
@@ -49,7 +49,7 @@ async function connectWalletForVerification() {
   }
 
   try {
-    await window.DepayWallet.requestWalletConnection();
+    await window.DepayWallet.requestWalletConnection("seller");
     refreshWalletVerification();
   } catch (error) {
     setWalletVerifyStatus(`Connection failed: ${error.message}`, "error");
@@ -61,7 +61,10 @@ listingForm?.addEventListener("submit", async (event) => {
 
   const sellerWallet = getSellerWallet();
   if (!sellerWallet) {
-    setWalletVerifyStatus("Connect MetaMask before submitting listing.", "error");
+    setWalletVerifyStatus(
+      "Connect MetaMask before submitting listing.",
+      "error",
+    );
     setStatus("Connect MetaMask first to add listing.", "error");
     return;
   }
@@ -75,7 +78,7 @@ listingForm?.addEventListener("submit", async (event) => {
   try {
     const response = await fetch(API_BASE_URL, {
       method: "POST",
-      body: formData
+      body: formData,
     });
 
     const payload = await response.json();
@@ -85,7 +88,9 @@ listingForm?.addEventListener("submit", async (event) => {
 
     setStatus("Listing created successfully.", "ok");
     mongoIdEl.textContent = payload.listingId;
-    const detailsUrl = `./sellerlistingdetails.html?id=${encodeURIComponent(payload.listingId)}`;
+    const detailsUrl = `./sellerlistingdetails.html?id=${encodeURIComponent(
+      payload.listingId,
+    )}`;
     detailsLinkEl.textContent = detailsUrl;
     detailsLinkEl.href = detailsUrl;
     cidLinkEl.textContent = payload.ipfsCid;

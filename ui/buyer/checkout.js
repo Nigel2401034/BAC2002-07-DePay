@@ -164,12 +164,12 @@ async function connectWalletIfNeeded() {
     throw new Error("Wallet utilities are not loaded.");
   }
 
-  const saved = window.DepayWallet.getSavedWallet();
+  const saved = window.DepayWallet.getSavedWallet("buyer");
   if (saved) {
     return saved;
   }
 
-  return window.DepayWallet.requestWalletConnection();
+  return window.DepayWallet.requestWalletConnection("buyer");
 }
 
 async function switchToHelaNetwork() {

@@ -1,51 +1,69 @@
 (function initWalletUtils() {
-	const STORAGE_KEY = "sellerWallet";
+  const STORAGE_KEYS = {
+    buyer: "buyerWallet",
+    seller: "sellerWallet",
+  };
 
-	function getSavedWallet() {
-		return localStorage.getItem(STORAGE_KEY) || "";
-	}
+  function normalizeRole(role) {
+    return role === "buyer" ? "buyer" : "seller";
+  }
 
-	function saveWallet(wallet) {
-		if (!wallet) return;
-		localStorage.setItem(STORAGE_KEY, wallet);
-	}
+  function getStorageKey(role) {
+    return STORAGE_KEYS[normalizeRole(role)];
+  }
 
-	function clearWallet() {
-		localStorage.removeItem(STORAGE_KEY);
-	}
+  function getSavedWallet(role = "seller") {
+    return localStorage.getItem(getStorageKey(role)) || "";
+  }
 
-	function shortenWallet(wallet) {
-		if (!wallet) return "";
-		return `${wallet.slice(0, 6)}...${wallet.slice(-4)}`;
-	}
+  function saveWallet(wallet, role = "seller") {
+    if (!wallet) return;
+    localStorage.setItem(getStorageKey(role), wallet);
+  }
 
-	async function requestWalletConnection() {
-		if (!window.ethereum) {
-			throw new Error("MetaMask not found. Install MetaMask extension first.");
-		}
+  function clearWallet(role = "seller") {
+    localStorage.removeItem(getStorageKey(role));
+  }
 
-		const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-		const wallet = accounts && accounts[0] ? accounts[0] : "";
-		if (!wallet) {
-			throw new Error("No wallet account returned by MetaMask.");
-		}
+  function shortenWallet(wallet) {
+    if (!wallet) return "";
+    return `${wallet.slice(0, 6)}...${wallet.slice(-4)}`;
+  }
 
-		if (window.APP_CONFIG && window.APP_CONFIG.expectedChainIdHex) {
-			const currentChainId = await window.ethereum.request({ method: "eth_chainId" });
-			if (currentChainId.toLowerCase() !== window.APP_CONFIG.expectedChainIdHex.toLowerCase()) {
-				throw new Error(`Wrong network (${currentChainId}).`);
-			}
-		}
+  async function requestWalletConnection(role = "seller") {
+    if (!window.ethereum) {
+      throw new Error("MetaMask not found. Install MetaMask extension first.");
+    }
 
-		saveWallet(wallet);
-		return wallet;
-	}
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    const wallet = accounts && accounts[0] ? accounts[0] : "";
+    if (!wallet) {
+      throw new Error("No wallet account returned by MetaMask.");
+    }
 
-	window.DepayWallet = {
-		getSavedWallet,
-		saveWallet,
-		clearWallet,
-		shortenWallet,
-		requestWalletConnection
-	};
+    if (window.APP_CONFIG && window.APP_CONFIG.expectedChainIdHex) {
+      const currentChainId = await window.ethereum.request({
+        method: "eth_chainId",
+      });
+      if (
+        currentChainId.toLowerCase() !==
+        window.APP_CONFIG.expectedChainIdHex.toLowerCase()
+      ) {
+        throw new Error(`Wrong network (${currentChainId}).`);
+      }
+    }
+
+    saveWallet(wallet, role);
+    return wallet;
+  }
+
+  window.DepayWallet = {
+    getSavedWallet,
+    saveWallet,
+    clearWallet,
+    shortenWallet,
+    requestWalletConnection,
+  };
 })();
