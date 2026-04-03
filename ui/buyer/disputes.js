@@ -35,9 +35,21 @@ function shortenAddress(addr) {
 // Dispute state constants (from contract)
 const DISPUTE_STATES = {
   0: { label: "None", badge: "badge-unknown", display: "No Dispute" },
-  1: { label: "Awaiting Seller", badge: "badge-warn", display: "Awaiting Seller Response" },
-  2: { label: "Awaiting Buyer", badge: "badge-warn", display: "Awaiting Your Counter" },
-  3: { label: "Awaiting Admin", badge: "badge-critical", display: "Pending Admin Decision" },
+  1: {
+    label: "Awaiting Seller",
+    badge: "badge-warn",
+    display: "Awaiting Seller Response",
+  },
+  2: {
+    label: "Awaiting Buyer",
+    badge: "badge-warn",
+    display: "Awaiting Your Counter",
+  },
+  3: {
+    label: "Awaiting Admin",
+    badge: "badge-critical",
+    display: "Pending Admin Decision",
+  },
   4: { label: "Resolved", badge: "badge-resolved", display: "Resolved" },
 };
 
@@ -89,7 +101,7 @@ async function openDispute(orderId, escrowId) {
   }
 
   try {
-    const buyerWallet = window.DepayWallet.getSavedWallet();
+    const buyerWallet = window.DepayWallet.getSavedWallet("buyer");
     if (!buyerWallet) throw new Error("Please connect your wallet first.");
 
     const disputeAddress = window.APP_CONFIG?.disputeAddress;
@@ -97,12 +109,14 @@ async function openDispute(orderId, escrowId) {
 
     setStatus("Opening dispute on blockchain…");
 
-    const methodId = "0x1e7f0e93"; // openDispute(uint256)
+    const methodId = "0x27d00fb0"; // openDispute(uint256)
     const paddedId = BigInt(escrowId).toString(16).padStart(64, "0");
 
     const txHash = await window.ethereum.request({
       method: "eth_sendTransaction",
-      params: [{ from: buyerWallet, to: disputeAddress, data: methodId + paddedId }],
+      params: [
+        { from: buyerWallet, to: disputeAddress, data: methodId + paddedId },
+      ],
     });
 
     setStatus("Saving dispute record…");
@@ -117,7 +131,13 @@ async function openDispute(orderId, escrowId) {
       }),
     }).catch(() => {});
 
-    setStatus("✅ Dispute opened successfully!", "ok");
+    await fetch(`${API_ORDERS}/${orderId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "refunded" }),
+    }).catch(() => {});
+
+    setStatus("✅ Dispute opened. Order cancelled and buyer refunded.", "ok");
     setTimeout(() => loadBuyerDisputes(), 2000);
   } catch (err) {
     console.error("openDispute error:", err);
@@ -135,7 +155,7 @@ async function sellerRespond(escrowId) {
   }
 
   try {
-    const sellerWallet = window.DepayWallet.getSavedWallet();
+    const sellerWallet = window.DepayWallet.getSavedWallet("seller");
     if (!sellerWallet) throw new Error("Please connect your wallet first.");
 
     const disputeAddress = window.APP_CONFIG?.disputeAddress;
@@ -143,12 +163,14 @@ async function sellerRespond(escrowId) {
 
     setStatus("Responding to dispute on blockchain…");
 
-    const methodId = "0xb9d0f6ca"; // sellerRespond(uint256)
+    const methodId = "0x7aa3a1df"; // sellerRespond(uint256)
     const paddedId = BigInt(escrowId).toString(16).padStart(64, "0");
 
     const txHash = await window.ethereum.request({
       method: "eth_sendTransaction",
-      params: [{ from: sellerWallet, to: disputeAddress, data: methodId + paddedId }],
+      params: [
+        { from: sellerWallet, to: disputeAddress, data: methodId + paddedId },
+      ],
     });
 
     setStatus(`✅ Response submitted! TX: ${shortenHash(txHash)}`, "ok");
@@ -169,7 +191,7 @@ async function buyerCounter(escrowId) {
   }
 
   try {
-    const buyerWallet = window.DepayWallet.getSavedWallet();
+    const buyerWallet = window.DepayWallet.getSavedWallet("buyer");
     if (!buyerWallet) throw new Error("Please connect your wallet first.");
 
     const disputeAddress = window.APP_CONFIG?.disputeAddress;
@@ -177,12 +199,14 @@ async function buyerCounter(escrowId) {
 
     setStatus("Submitting counter on blockchain…");
 
-    const methodId = "0x6b0d1f97"; // buyerCounter(uint256)
+    const methodId = "0x5b3a47b5"; // buyerCounter(uint256)
     const paddedId = BigInt(escrowId).toString(16).padStart(64, "0");
 
     const txHash = await window.ethereum.request({
       method: "eth_sendTransaction",
-      params: [{ from: buyerWallet, to: disputeAddress, data: methodId + paddedId }],
+      params: [
+        { from: buyerWallet, to: disputeAddress, data: methodId + paddedId },
+      ],
     });
 
     setStatus(`✅ Counter submitted! TX: ${shortenHash(txHash)}`, "ok");
@@ -203,7 +227,9 @@ async function enforceDeadline(escrowId) {
   }
 
   try {
-    const wallet = window.DepayWallet.getSavedWallet();
+    const wallet =
+      window.DepayWallet.getSavedWallet("buyer") ||
+      window.DepayWallet.getSavedWallet("seller");
     if (!wallet) throw new Error("Please connect your wallet first.");
 
     const disputeAddress = window.APP_CONFIG?.disputeAddress;
@@ -211,7 +237,7 @@ async function enforceDeadline(escrowId) {
 
     setStatus("Enforcing deadline on blockchain…");
 
-    const methodId = "0x51bc5e4b"; // enforceDeadline(uint256)
+    const methodId = "0xf91ab671"; // enforceDeadline(uint256)
     const paddedId = BigInt(escrowId).toString(16).padStart(64, "0");
 
     const txHash = await window.ethereum.request({
@@ -243,7 +269,10 @@ function renderDispute(dispute) {
   const currentWallet = window.DepayWallet?.getSavedWallet() || "";
 
   // Buyer actions
-  if (state === 2 && currentWallet.toLowerCase() === (dispute.buyer || "").toLowerCase()) {
+  if (
+    state === 2 &&
+    currentWallet.toLowerCase() === (dispute.buyer || "").toLowerCase()
+  ) {
     actionsHtml = `
       <button type="button" class="button" data-counter-btn="${dispute.escrowId}" title="Submit counter-response">
         Submit Counter Response
@@ -251,7 +280,10 @@ function renderDispute(dispute) {
   }
 
   // Seller actions
-  if (state === 1 && currentWallet.toLowerCase() === (dispute.seller || "").toLowerCase()) {
+  if (
+    state === 1 &&
+    currentWallet.toLowerCase() === (dispute.seller || "").toLowerCase()
+  ) {
     actionsHtml = `
       <button type="button" class="button" data-respond-btn="${dispute.escrowId}" title="Respond to dispute">
         Respond to Dispute
@@ -259,7 +291,11 @@ function renderDispute(dispute) {
   }
 
   // Enforce deadline (anyone)
-  if ((state === 1 || state === 2) && dispute.deadline && dispute.deadline > 0) {
+  if (
+    (state === 1 || state === 2) &&
+    dispute.deadline &&
+    dispute.deadline > 0
+  ) {
     const now = Math.floor(Date.now() / 1000);
     if (now > dispute.deadline) {
       actionsHtml += `
@@ -278,7 +314,9 @@ function renderDispute(dispute) {
       <div class="dispute-header">
         <div>
           <h3>Dispute …${shortId}</h3>
-          <p class="muted" style="margin: 0.2rem 0 0;">Order: ${dispute.orderId || "?"}</p>
+          <p class="muted" style="margin: 0.2rem 0 0;">Order: ${
+            dispute.orderId || "?"
+          }</p>
         </div>
         <span class="status-badge ${badgeClass}">${stateDisplay}</span>
       </div>
@@ -296,18 +334,22 @@ function renderDispute(dispute) {
           <strong>Escrow ID:</strong>
           <code>${dispute.escrowId || "?"}</code>
         </div>
-        ${dispute.deadline && dispute.deadline > 0
-          ? `<div class="dispute-detail-row">
+        ${
+          dispute.deadline && dispute.deadline > 0
+            ? `<div class="dispute-detail-row">
               <strong>Deadline:</strong>
               <span class="${deadlineClass}">${deadlineStatus.text}</span>
             </div>`
-          : ""}
-        ${dispute.txHash
-          ? `<div class="dispute-detail-row">
+            : ""
+        }
+        ${
+          dispute.txHash
+            ? `<div class="dispute-detail-row">
               <strong>Opened TX:</strong>
               <code>${shortenHash(dispute.txHash)}</code>
             </div>`
-          : ""}
+            : ""
+        }
       </div>
 
       <div class="dispute-actions">${actionsHtml}</div>
@@ -318,10 +360,11 @@ function renderDispute(dispute) {
 // Load disputes for connected buyer
 // ---------------------------------------------------------------------------
 async function loadBuyerDisputes() {
-  const buyerWallet = window.DepayWallet?.getSavedWallet();
+  const buyerWallet = window.DepayWallet?.getSavedWallet("buyer");
 
   if (!buyerWallet) {
-    disputesListEl.innerHTML = '<p class="muted">Please connect your wallet to view disputes.</p>';
+    disputesListEl.innerHTML =
+      '<p class="muted">Please connect your wallet to view disputes.</p>';
     disputesCountEl.textContent = "No wallet connected";
     setStatus("Connect wallet to view your disputes.", "error");
     return;
@@ -332,7 +375,7 @@ async function loadBuyerDisputes() {
 
   try {
     const response = await fetch(
-      `${API_DISPUTES}/buyer/${encodeURIComponent(buyerWallet)}`
+      `${API_DISPUTES}/buyer/${encodeURIComponent(buyerWallet)}`,
     );
     const payload = response.json ? await response.json() : { disputes: [] };
 
@@ -343,13 +386,16 @@ async function loadBuyerDisputes() {
     const disputes = payload.disputes || [];
 
     if (disputes.length === 0) {
-      disputesListEl.innerHTML = '<p class="muted">No disputes. All orders are proceeding normally.</p>';
+      disputesListEl.innerHTML =
+        '<p class="muted">No disputes. All orders are proceeding normally.</p>';
       disputesCountEl.textContent = "0 disputes";
       setStatus("No active disputes.", "ok");
       return;
     }
 
-    disputesCountEl.textContent = `${disputes.length} dispute${disputes.length !== 1 ? "s" : ""}`;
+    disputesCountEl.textContent = `${disputes.length} dispute${
+      disputes.length !== 1 ? "s" : ""
+    }`;
 
     const html = disputes.map(renderDispute).join("");
     disputesListEl.innerHTML = `<div class="disputes-list">${html}</div>`;
@@ -357,19 +403,17 @@ async function loadBuyerDisputes() {
     // Attach event listeners
     disputesListEl.querySelectorAll("[data-respond-btn]").forEach((btn) => {
       btn.addEventListener("click", () =>
-        sellerRespond(btn.dataset.respondBtn)
+        sellerRespond(btn.dataset.respondBtn),
       );
     });
 
     disputesListEl.querySelectorAll("[data-counter-btn]").forEach((btn) => {
-      btn.addEventListener("click", () =>
-        buyerCounter(btn.dataset.counterBtn)
-      );
+      btn.addEventListener("click", () => buyerCounter(btn.dataset.counterBtn));
     });
 
     disputesListEl.querySelectorAll("[data-enforce-btn]").forEach((btn) => {
       btn.addEventListener("click", () =>
-        enforceDeadline(btn.dataset.enforceBtn)
+        enforceDeadline(btn.dataset.enforceBtn),
       );
     });
 

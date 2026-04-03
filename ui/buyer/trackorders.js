@@ -121,7 +121,7 @@ async function openDisputeFromOrder(orderId, escrowId) {
   if (!confirmed) return;
 
   try {
-    const buyerWallet = window.DepayWallet.getSavedWallet();
+    const buyerWallet = window.DepayWallet.getSavedWallet("buyer");
     if (!buyerWallet) throw new Error("Please connect your wallet first.");
 
     const disputeAddress = window.APP_CONFIG?.disputeAddress;
@@ -129,7 +129,7 @@ async function openDisputeFromOrder(orderId, escrowId) {
 
     setStatus("Opening dispute on blockchain…");
 
-    const methodId = "0x1e7f0e93"; // openDispute(uint256)
+    const methodId = "0x27d00fb0"; // openDispute(uint256)
     const paddedId = BigInt(escrowId).toString(16).padStart(64, "0");
 
     const txHash = await window.ethereum.request({
@@ -151,7 +151,17 @@ async function openDisputeFromOrder(orderId, escrowId) {
       }),
     }).catch(() => {});
 
-    setStatus("✅ Dispute opened! Check the Disputes page for updates.", "ok");
+    // Keep buyer order timeline aligned with on-chain refund result.
+    await fetch(`${API_ORDERS}/${orderId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "refunded" }),
+    }).catch(() => {});
+
+    setStatus(
+      "✅ Dispute opened. Escrow refunded to buyer and order marked as cancelled.",
+      "ok",
+    );
     setTimeout(() => loadBuyerOrders(), 2500);
   } catch (err) {
     console.error("openDisputeFromOrder error:", err);
@@ -302,6 +312,7 @@ function renderOrder(order) {
   const status = (order.status || "unknown").toLowerCase();
   const badgeClass = getStatusBadgeClass(status);
   const shortId = order._id?.toString?.().slice(-8) || "?";
+  const statusLabel = status === "refunded" ? "ORDER CANCELLED" : status.toUpperCase();
 
   const itemsHtml = (order.items || [])
     .map(
@@ -364,7 +375,7 @@ function renderOrder(order) {
       status === "released"
         ? "Funds released to seller."
         : status === "refunded"
-        ? "Funds refunded to buyer."
+        ? "Order cancelled. Funds refunded to buyer."
         : status === "delivered"
         ? "Awaiting oracle release…"
         : "Pending.";
@@ -375,7 +386,7 @@ function renderOrder(order) {
     <article class="order-card">
       <div class="order-header">
         <h3>Order …${shortId}</h3>
-        <span class="status-badge ${badgeClass}">${status.toUpperCase()}</span>
+        <span class="status-badge ${badgeClass}">${statusLabel}</span>
       </div>
 
       ${timelineHtml}

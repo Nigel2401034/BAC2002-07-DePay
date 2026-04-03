@@ -28,18 +28,15 @@ interface IOrderTracking {
  * Full flow:
  *
  *   1. Buyer calls openDispute(escrowId).
- *      The contract checks on-chain tracking immediately:
- *        a) DELIVERED              → seller wins, funds released right away.
- *        b) SHIPPED for > 3 days  → package stuck, buyer wins, funds refunded right away.
- *        c) Anything else          → "unclear"; funds frozen, deadline system starts.
+ *      Funds are immediately refunded to buyer and the dispute is marked resolved.
  *
- *   2. [Deadline system] Seller must call sellerRespond() within 3 days.
+ *   2. [Legacy flow] Seller may call sellerRespond() within 3 days.
  *        - No response in time → anyone calls enforceDeadline() → buyer refunded.
  *
- *   3. If seller responds, buyer has 3 days to call buyerCounter().
+ *   3. [Legacy flow] If seller responds, buyer has 3 days to call buyerCounter().
  *        - No counter in time  → anyone calls enforceDeadline() → seller paid.
  *
- *   4. If buyer counters, dispute escalates to admin.
+ *   4. [Legacy flow] If buyer counters, dispute escalates to admin.
  *        - Owner calls adminResolve(escrowId, refundBuyer) to make the final call.
  *
  * Note: Because the same wallet may act as both buyer and seller in test/demo
@@ -126,8 +123,7 @@ contract DePayDispute is ReentrancyGuard {
 
     /**
      * @notice Buyer raises a dispute against a funded escrow.
-     *         Immediately resolves if tracking is conclusive; otherwise
-     *         freezes funds and starts the seller response window.
+     *         Current policy: opening a dispute immediately refunds the buyer.
      */
     function openDispute(uint256 escrowId) external nonReentrant {
         (address buyer, address seller, , uint8 escStatus) = escrow.getEscrow(escrowId);
@@ -141,33 +137,8 @@ contract DePayDispute is ReentrancyGuard {
         d.buyer  = buyer;
         d.seller = seller;
 
-        (, uint8 trackStatus, uint256 updatedAt, bool trackExists) =
-            tracking.getTracking(escrowId);
-
-        // --- Immediate: delivered → seller wins ---
-        if (trackExists && trackStatus == TRACK_DELIVERED) {
-            _resolveRelease(escrowId, d);
-            emit DisputeOpened(escrowId, buyer, 1);
-            return;
-        }
-
-        // --- Immediate: shipped but no update for > STUCK_THRESHOLD → buyer wins ---
-        if (
-            trackExists &&
-            trackStatus == TRACK_SHIPPED &&
-            block.timestamp - updatedAt > STUCK_THRESHOLD
-        ) {
-            _resolveRefund(escrowId, d);
-            emit DisputeOpened(escrowId, buyer, 2);
-            return;
-        }
-
-        // --- Unclear: freeze funds and start the deadline system ---
-        escrow.freeze(escrowId);
-        d.state    = STATE_AWAITING_SELLER;
-        d.deadline = block.timestamp + SELLER_WINDOW;
-
-        emit DisputeOpened(escrowId, buyer, 0);
+        _resolveRefund(escrowId, d);
+        emit DisputeOpened(escrowId, buyer, 2);
     }
 
     // -----------------------------------------------------------------------

@@ -20,6 +20,11 @@
     "typechain": "^8.3.2"
   },
   "scripts": {
+    "build": "hardhat compile",
+    "deploy:escrow:hela": "hardhat run scripts/deploy.js --network helaTestnet",
+    "deploy:tracking:hela": "hardhat run scripts/deployTracking.js --network helaTestnet",
+    "deploy:dispute:hela": "hardhat run scripts/deployDispute.js --network helaTestnet",
+    "link:contracts:hela": "hardhat run scripts/linkContracts.js --network helaTestnet",
     "backend": "node backend/server.js",
     "backend:dev": "nodemon backend/server.js",
     "oracle": "node oracle/oracle.js",
