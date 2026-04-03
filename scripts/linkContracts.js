@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({ override: true });
 const hre = require("hardhat");
 
 function requiredEnv(name) {

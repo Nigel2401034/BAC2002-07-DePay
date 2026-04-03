@@ -11,28 +11,28 @@
  * After running, copy the printed address into .env:
  *   DISPUTE_ADDRESS=0x...
  */
-require("dotenv").config();
+require("dotenv").config({ override: true });
 const hre = require("hardhat");
 
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
   console.log("Deploying with wallet:", deployer.address);
 
-  const escrowAddress   = process.env.ESCROW_ADDRESS?.trim();
+  const escrowAddress = process.env.ESCROW_ADDRESS?.trim();
   const trackingAddress = process.env.ORDER_TRACKING_ADDRESS?.trim();
 
   if (!escrowAddress || !trackingAddress) {
     throw new Error(
-      "ESCROW_ADDRESS and ORDER_TRACKING_ADDRESS must both be set in .env"
+      "ESCROW_ADDRESS and ORDER_TRACKING_ADDRESS must both be set in .env",
     );
   }
 
   // ── Deploy DePayDispute ───────────────────────────────────────────────────
   const Dispute = await hre.ethers.getContractFactory("DePayDispute");
   const dispute = await Dispute.deploy(
-    deployer.address,   // owner  (admin who can call adminResolve)
-    escrowAddress,      // escrow contract
-    trackingAddress     // order tracking contract
+    deployer.address, // owner  (admin who can call adminResolve)
+    escrowAddress, // escrow contract
+    trackingAddress, // order tracking contract
   );
   await dispute.waitForDeployment();
   const disputeAddress = await dispute.getAddress();

@@ -8,7 +8,7 @@
  *
  * ORACLE_PRIVATE_KEY must already be set in .env.
  */
-require("dotenv").config();
+require("dotenv").config({ override: true });
 const hre = require("hardhat");
 
 async function main() {
@@ -24,8 +24,12 @@ async function main() {
 
   // ── Derive oracle wallet address from ORACLE_PRIVATE_KEY ─────────────────
   if (!process.env.ORACLE_PRIVATE_KEY) {
-    console.warn("⚠️  ORACLE_PRIVATE_KEY not set — skipping setOracle() calls.");
-    console.log("\nManually call setOracle() on both contracts with your oracle address.");
+    console.warn(
+      "⚠️  ORACLE_PRIVATE_KEY not set — skipping setOracle() calls.",
+    );
+    console.log(
+      "\nManually call setOracle() on both contracts with your oracle address.",
+    );
     return;
   }
 

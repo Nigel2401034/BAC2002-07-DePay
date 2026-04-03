@@ -24,24 +24,36 @@
  *   ORACLE_DELIVER_DELAY      — ms after shipped before releasing, default 60000
  */
 
-require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
+require("dotenv").config({
+  path: require("path").resolve(__dirname, "../.env"),
+  override: true,
+});
 
 const { MongoClient, ObjectId } = require("mongodb");
-const axios   = require("axios");
+const axios = require("axios");
 const { ethers } = require("ethers");
 const { getContracts } = require("./chain");
 
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
-const MONGO_URI        = process.env.MONGODB_URI || "mongodb://root:password@localhost:27018/listings";
-const BACKEND_URL      = (process.env.BACKEND_URL || "http://localhost:5000").replace(/\/$/, "");
-const POLL_INTERVAL_MS = parseInt(process.env.ORACLE_POLL_INTERVAL  || "15000", 10);
-const SHIP_DELAY_MS    = parseInt(process.env.ORACLE_SHIP_DELAY     || "30000", 10);
-const DELIVER_DELAY_MS = parseInt(process.env.ORACLE_DELIVER_DELAY  || "60000", 10);
+const MONGO_URI =
+  process.env.MONGODB_URI || "mongodb://root:password@localhost:27018/listings";
+const BACKEND_URL = (
+  process.env.BACKEND_URL || "http://localhost:5000"
+).replace(/\/$/, "");
+const POLL_INTERVAL_MS = parseInt(
+  process.env.ORACLE_POLL_INTERVAL || "15000",
+  10,
+);
+const SHIP_DELAY_MS = parseInt(process.env.ORACLE_SHIP_DELAY || "30000", 10);
+const DELIVER_DELAY_MS = parseInt(
+  process.env.ORACLE_DELIVER_DELAY || "60000",
+  10,
+);
 
-const DB_NAME      = "listings";
-const ORDERS_COLL  = "escrow_orders";
+const DB_NAME = "listings";
+const ORDERS_COLL = "escrow_orders";
 
 // ---------------------------------------------------------------------------
 // In-memory state: orderId → { status: "funded"|"shipped", since: timestamp }
@@ -56,7 +68,7 @@ const inProgress = new Set();
 // ---------------------------------------------------------------------------
 async function updateOrderViaAPI(orderId, status, extra = {}) {
   const body = { status, ...extra };
-  const url  = `${BACKEND_URL}/api/orders/${orderId}`;
+  const url = `${BACKEND_URL}/api/orders/${orderId}`;
   try {
     const res = await axios.put(url, body, {
       headers: { "Content-Type": "application/json" },
@@ -78,8 +90,13 @@ async function tryCreateTracking(tracking, escrowId, orderId) {
     console.log(`   ⛓  createTracking(${escrowId}) mined: ${tx.hash}`);
   } catch (err) {
     // AlreadyExists is fine — oracle restarted or duplicate call
-    if (err?.reason === "AlreadyExists" || err?.message?.includes("AlreadyExists")) {
-      console.log(`   ℹ️  Tracking for escrow ${escrowId} already exists on-chain`);
+    if (
+      err?.reason === "AlreadyExists" ||
+      err?.message?.includes("AlreadyExists")
+    ) {
+      console.log(
+        `   ℹ️  Tracking for escrow ${escrowId} already exists on-chain`,
+      );
     } else {
       console.warn(`   ⚠️  createTracking(${escrowId}) failed: ${err.message}`);
     }
@@ -91,9 +108,13 @@ async function tryUpdateTrackingStatus(tracking, escrowId, newStatus) {
   try {
     const tx = await tracking.updateStatus(BigInt(escrowId), newStatus);
     await tx.wait();
-    console.log(`   ⛓  updateStatus(${escrowId}, ${newStatus}) mined: ${tx.hash}`);
+    console.log(
+      `   ⛓  updateStatus(${escrowId}, ${newStatus}) mined: ${tx.hash}`,
+    );
   } catch (err) {
-    console.warn(`   ⚠️  updateStatus(${escrowId}, ${newStatus}) failed: ${err.message}`);
+    console.warn(
+      `   ⚠️  updateStatus(${escrowId}, ${newStatus}) failed: ${err.message}`,
+    );
   }
 }
 
@@ -129,7 +150,7 @@ async function poll(ordersCollection, { escrow, tracking }) {
   try {
     activeOrders = await ordersCollection
       .find({
-        status:   { $in: ["funded", "shipped"] },
+        status: { $in: ["funded", "shipped"] },
         escrowId: { $exists: true, $ne: null, $nin: [null, ""] },
       })
       .toArray();
@@ -143,12 +164,12 @@ async function poll(ordersCollection, { escrow, tracking }) {
   console.log(`🔍 Poll — ${activeOrders.length} active order(s)`);
 
   for (const order of activeOrders) {
-    const orderId  = order._id.toString();
+    const orderId = order._id.toString();
     const escrowId = String(order.escrowId);
 
     if (inProgress.has(orderId)) continue;
 
-    const now     = Date.now();
+    const now = Date.now();
     const tracked = trackedOrders.get(orderId);
 
     if (!tracked) {
@@ -157,10 +178,14 @@ async function poll(ordersCollection, { escrow, tracking }) {
 
       // Register on-chain tracking if order is freshly funded
       if (order.status === "funded") {
-        console.log(`📋 New funded order tracked: ${orderId} (escrowId=${escrowId})`);
+        console.log(
+          `📋 New funded order tracked: ${orderId} (escrowId=${escrowId})`,
+        );
         await tryCreateTracking(tracking, escrowId, orderId);
       } else {
-        console.log(`📋 Resuming ${order.status} order: ${orderId} (escrowId=${escrowId})`);
+        console.log(
+          `📋 Resuming ${order.status} order: ${orderId} (escrowId=${escrowId})`,
+        );
       }
       continue; // Wait for next poll tick to check elapsed time
     }
@@ -177,7 +202,6 @@ async function poll(ordersCollection, { escrow, tracking }) {
       } finally {
         inProgress.delete(orderId);
       }
-
     } else if (tracked.status === "shipped" && elapsed >= DELIVER_DELAY_MS) {
       inProgress.add(orderId);
       try {
@@ -241,7 +265,10 @@ async function main() {
 
   // Run immediately, then on interval
   await poll(ordersCollection, { escrow, tracking });
-  const timer = setInterval(() => poll(ordersCollection, { escrow, tracking }), POLL_INTERVAL_MS);
+  const timer = setInterval(
+    () => poll(ordersCollection, { escrow, tracking }),
+    POLL_INTERVAL_MS,
+  );
 
   process.on("SIGINT", async () => {
     console.log("\n⏹️  Oracle shutting down…");
