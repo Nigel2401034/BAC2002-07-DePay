@@ -45,7 +45,7 @@ function renderListings(listings) {
             <img class="listing-rect-image" src="${imageUrl}" alt="${title}" loading="lazy" onerror="this.src='${fallbackImage}'" />
             <div class="listing-rect-body">
               <h3 class="listing-rect-title">${title}</h3>
-              <p class="listing-rect-price">${price} XSGD</p>
+              <p class="listing-rect-price">${price} HLUSD</p>
             </div>
           </article>
         </a>

@@ -76,7 +76,7 @@ function updateSummary() {
   if (cartSelectionSummaryEl) {
     cartSelectionSummaryEl.textContent = `${
       selectedItems.length
-    } selected (${selectedQty} qty) | ${total.toFixed(2)} XSGD`;
+    } selected (${selectedQty} qty) | ${total.toFixed(2)} HLUSD`;
   }
 
   if (checkoutSelectedBtn) {
@@ -139,7 +139,7 @@ function renderCart() {
             <p class="muted">${item.description || "No description"}</p>
             <p class="cart-meta">${Number(item.priceXsgd || 0).toFixed(
               2,
-            )} XSGD each</p>
+            )} HLUSD each</p>
             <div class="cart-qty-row">
               <button type="button" class="button-link cart-qty-btn" data-qty-action="decrease" data-item-id="${
                 item.id
@@ -163,7 +163,7 @@ function renderCart() {
             <p class="cart-meta">Subtotal: ${(
               Number(item.priceXsgd || 0) *
               normalizeQuantity(item.quantity || 1)
-            ).toFixed(2)} XSGD</p>
+            ).toFixed(2)} HLUSD</p>
             <p class="cart-meta">Seller: ${item.sellerWallet || "-"}</p>
           </div>
           <button type="button" class="button-link cart-remove-btn" data-remove-id="${

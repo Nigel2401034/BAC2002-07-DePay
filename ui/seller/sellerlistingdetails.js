@@ -48,7 +48,7 @@ function renderListing(listing) {
 
       <div class="listing-details-info">
         <h2 class="listing-details-title">${title}</h2>
-        <p class="listing-details-price">${Number(listing.priceXsgd || 0).toFixed(2)} XSGD</p>
+        <p class="listing-details-price">${Number(listing.priceXsgd || 0).toFixed(2)} HLUSD</p>
         <p class="listing-details-description">${listing.description || "No description"}</p>
 
         <div class="listing-details-grid">

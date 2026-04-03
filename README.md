@@ -16,57 +16,17 @@ npm install
 ```
 
 ## 3. Environment Setup
-
+The env file is included for immediate testing, but it is recommended to resetup the env file to ensure no errors.
 1. Copy `.env.example` to `.env`
+2. Deploy smart contracts (see 3.1 Deploy / Link Contracts (Hela Testnet)")
 2. Fill in wallet keys, contract addresses, and tokens
 
-```powershell
-Copy-Item .env.example .env
-```
-
-Important:
-
-1. `.env` contains secrets and should not be shared.
-2. `.env.example` is a safe template only.
-
-### Test-Only Replica Values (Not Good Practice)
-
-For this project replication/testing purpose only, you can paste the current test values below into `.env`.
-
-Do not use this pattern in real projects. Never use these values on production networks.
-
-```env
-PRIVATE_KEY=cfb4ec26ae2004b51951415a8a21b4913795a94a82b65c3f375bf09a3c26846c
-ORACLE_PRIVATE_KEY=1b533c04926806c63f6c9afedefd3908cb2216dc160b1b928d3d481a36ffce9b
-ESCROW_ADDRESS=0xc4Ed2952c050Bd8330084f4C39155878B39939D4
-ORDER_TRACKING_ADDRESS=0xC0efdbA6C116e5B3Ca4472E4F085a8fC542F1a82
-DISPUTE_ADDRESS=0x6E29f3aBEa7bFed45560a1C270635e25705EB86e
-RPC_URL=https://testnet-rpc.helachain.com
-CHAIN_ID=0xa2d08
-MONGODB_URI=mongodb://root:password@localhost:27018
-NODE_ENV=development
-SEED_LISTINGS_ON_START=true
-```
-
-## 4. Start MongoDB
-
-```powershell
-docker compose -f docker-compose.mongodb.yml up -d
-```
-
-Default DB in this project:
-
-1. `MONGODB_URI=mongodb://root:password@localhost:27018`
-
-## 5. Compile Contracts
+### 3.1 Deploy / Link Contracts (Hela Testnet)
+Run in this order:
 
 ```powershell
 npm run build
 ```
-
-## 6. Deploy / Link Contracts (Hela Testnet)
-
-Run in this order:
 
 1. Deploy Escrow
 
@@ -98,8 +58,6 @@ npm run deploy:dispute:hela
 npm run link:contracts:hela
 ```
 
-## 7. Sync Frontend Contract Addresses
-
 Update `ui/config.js` to match deployed addresses in `.env`:
 
 1. `escrowAddress`
@@ -108,10 +66,20 @@ Update `ui/config.js` to match deployed addresses in `.env`:
 
 If these do not match, UI transactions will fail.
 
-## 8. Run Backend
+## 4. Start Docker Container
+Ensure Docker is running first.
+```powershell
+docker compose -f docker-compose.mongodb.yml up -d
+```
+
+To view DB in MongoDB Compass:
+New Connection-> URi -> mongodb://root:password@localhost:27018/listings?authSource=admin
+
+
+## 5. Run Backend
 
 ```powershell
-npm run backend:dev
+npm run backend
 ```
 
 Health check:
@@ -120,7 +88,7 @@ Health check:
 Invoke-WebRequest -UseBasicParsing http://localhost:5000/health | Select-Object -ExpandProperty Content
 ```
 
-## 9. Run Oracle (Optional / if needed)
+## 6. Run Oracle (Optional / if needed)
 
 ```powershell
 npm run oracle:dev
@@ -128,7 +96,7 @@ npm run oracle:dev
 
 Use when you want automatic tracking updates / oracle release flow.
 
-## 10. Open App
+## 7. Open App
 
 1. Open `http://localhost:5000`
 2. Choose Buyer/Seller role
@@ -141,7 +109,7 @@ Use when you want automatic tracking updates / oracle release flow.
 3. `npm run deploy:tracking:hela`
 4. `npm run deploy:dispute:hela`
 5. `npm run link:contracts:hela`
-6. `npm run backend:dev`
+6. `npm run backend`
 7. `npm run oracle:dev`
 
 ## Troubleshooting

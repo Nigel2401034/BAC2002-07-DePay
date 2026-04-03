@@ -95,7 +95,7 @@ function renderSelectedItems() {
   if (!selectedItems.length) {
     checkoutItemsEl.innerHTML =
       '<p class="muted">No selected cart items. Go back to cart and select items first.</p>';
-    checkoutTotalEl.textContent = "Total: 0.00 XSGD";
+    checkoutTotalEl.textContent = "Total: 0.00 HLUSD";
     payNowBtn.disabled = true;
     setStatus("No selected items.", "error");
     return;
@@ -112,10 +112,10 @@ function renderSelectedItems() {
           <p class="muted">Seller: ${item.sellerWallet || "-"}</p>
           <p class="cart-meta">${Number(item.priceXsgd || 0).toFixed(
             2,
-          )} XSGD each</p>
+          )} HLUSD each</p>
           <p class="cart-meta">Subtotal: ${(
             Number(item.priceXsgd || 0) * normalizeQuantity(item.quantity || 1)
-          ).toFixed(2)} XSGD</p>
+          ).toFixed(2)} HLUSD</p>
         </article>
       `;
     })
@@ -124,7 +124,7 @@ function renderSelectedItems() {
   checkoutItemsEl.innerHTML = `<div class="checkout-items-list">${rows}</div>`;
 
   const total = getTotalXsgd(selectedItems);
-  checkoutTotalEl.textContent = `Total: ${total.toFixed(2)} XSGD`;
+  checkoutTotalEl.textContent = `Total: ${total.toFixed(2)} HLUSD`;
   payNowBtn.disabled = false;
   setStatus("Ready for billing, shipping, and wallet payment.", "ok");
 }
