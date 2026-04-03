@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>DePay Seller - Orders</title>
+		<link rel="stylesheet" href="../style.css" />
+	</head>
+	<body>
+		<div id="sellerNavbarMount"></div>
+
+		<main class="container seller-placeholder-wrap">
+			<section class="card">
+				<div class="section-header">
+					<h1>Your Sales</h1>
+					<button type="button" id="refreshOrdersBtn" class="button-link">
+						🔄 Refresh
+					</button>
+				</div>
+
+				<p id="ordersCount" class="muted">Loading…</p>
+				<p id="ordersStatus" class="status"></p>
+
+				<div id="ordersList"></div>
+			</section>
+		</main>
+
+		<script src="../config.js"></script>
+		<script src="../app.js"></script>
+		<script src="./navbar.js"></script>
+		<script src="./seller.js"></script>
+		<script src="./orders.js"></script>
+	</body>
+</html>
