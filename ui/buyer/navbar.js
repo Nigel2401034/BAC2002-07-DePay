@@ -13,6 +13,7 @@ function initBuyerNavbar(root = document) {
     document.getElementById("buyerCartNavLink");
 
   const walletApi = window.DepayWallet;
+  const walletRole = "buyer";
   const cartStorageKey = "buyerCartItems";
 
   if (!connectWalletBtn || !walletStatus || !walletMenuLabel) {
@@ -44,6 +45,7 @@ function initBuyerNavbar(root = document) {
     if (!connected) {
       walletStatus.hidden = true;
       walletStatus.textContent = "";
+      connectWalletBtn.textContent = "Connect Wallet";
       connectWalletBtn.hidden = false;
       connectWalletBtn.style.display = "inline-block";
       return;
@@ -51,34 +53,9 @@ function initBuyerNavbar(root = document) {
 
     walletStatus.hidden = false;
     walletStatus.textContent = `Wallet: ${wallet}`;
-    connectWalletBtn.hidden = true;
-    connectWalletBtn.style.display = "none";
-  }
-
-  async function syncWalletFromProvider() {
-    if (!window.ethereum) {
-      return;
-    }
-
-    try {
-      const accounts = await window.ethereum.request({
-        method: "eth_accounts",
-      });
-      const providerWallet = accounts && accounts[0] ? accounts[0] : "";
-
-      if (walletApi) {
-        if (providerWallet) {
-          walletApi.saveWallet(providerWallet);
-        } else {
-          walletApi.clearWallet();
-        }
-      }
-
-      renderWallet(providerWallet);
-    } catch {
-      const savedWallet = walletApi ? walletApi.getSavedWallet() : "";
-      renderWallet(savedWallet);
-    }
+    connectWalletBtn.textContent = "Reconnect Wallet";
+    connectWalletBtn.hidden = false;
+    connectWalletBtn.style.display = "inline-block";
   }
 
   async function connectWallet() {
@@ -89,7 +66,7 @@ function initBuyerNavbar(root = document) {
     }
 
     try {
-      const wallet = await walletApi.requestWalletConnection();
+      const wallet = await walletApi.requestWalletConnection(walletRole);
       renderWallet(wallet);
     } catch (error) {
       walletStatus.textContent = `Connection failed: ${error.message}`;
@@ -99,10 +76,9 @@ function initBuyerNavbar(root = document) {
 
   connectWalletBtn.addEventListener("click", connectWallet);
 
-  const savedWallet = walletApi ? walletApi.getSavedWallet() : "";
+  const savedWallet = walletApi ? walletApi.getSavedWallet(walletRole) : "";
   renderWallet(savedWallet);
   renderCartCount();
-  syncWalletFromProvider();
 
   window.addEventListener("storage", (event) => {
     if (event.key === cartStorageKey) {
@@ -111,20 +87,6 @@ function initBuyerNavbar(root = document) {
   });
 
   document.addEventListener("buyer-cart-updated", renderCartCount);
-
-  if (window.ethereum) {
-    window.ethereum.on("accountsChanged", (accounts) => {
-      const wallet = accounts && accounts[0] ? accounts[0] : "";
-      if (walletApi) {
-        if (wallet) {
-          walletApi.saveWallet(wallet);
-        } else {
-          walletApi.clearWallet();
-        }
-      }
-      renderWallet(wallet);
-    });
-  }
 }
 
 window.initBuyerNavbar = initBuyerNavbar;

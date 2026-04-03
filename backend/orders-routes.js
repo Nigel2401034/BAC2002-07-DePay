@@ -158,14 +158,22 @@ router.put("/:orderId", async (req, res) => {
       recordedAt: new Date().toISOString(),
     };
 
-    const updateIpfsCid = await uploadJSONToIPFS(
-      updateSnapshot,
-      `escrow-order-update-${(existingOrder.txHash || "")
-        .replace("0x", "")
-        .slice(0, 16)}-${Date.now()}`,
-    );
-    updateData.lastUpdateIpfsCid = updateIpfsCid;
-    updateData.lastUpdateIpfsGatewayUrl = `https://gateway.pinata.cloud/ipfs/${updateIpfsCid}`;
+    let updateIpfsCid = null;
+    try {
+      updateIpfsCid = await uploadJSONToIPFS(
+        updateSnapshot,
+        `escrow-order-update-${(existingOrder.txHash || "")
+          .replace("0x", "")
+          .slice(0, 16)}-${Date.now()}`,
+      );
+      updateData.lastUpdateIpfsCid = updateIpfsCid;
+      updateData.lastUpdateIpfsGatewayUrl = `https://gateway.pinata.cloud/ipfs/${updateIpfsCid}`;
+    } catch (ipfsError) {
+      console.warn(
+        "⚠️ IPFS snapshot upload failed, continuing DB update:",
+        ipfsError.message,
+      );
+    }
 
     const updated = await db.updateEscrowOrder(req.params.orderId, updateData);
     if (!updated) {

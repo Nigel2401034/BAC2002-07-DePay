@@ -1,6 +1,6 @@
-const ordersListEl    = document.getElementById("ordersList");
-const ordersStatusEl  = document.getElementById("ordersStatus");
-const ordersCountEl   = document.getElementById("ordersCount");
+const ordersListEl = document.getElementById("ordersList");
+const ordersStatusEl = document.getElementById("ordersStatus");
+const ordersCountEl = document.getElementById("ordersCount");
 const refreshOrdersBtn = document.getElementById("refreshOrdersBtn");
 
 const API_ORDERS = "http://localhost:5000/api/orders";
@@ -41,12 +41,18 @@ function shortenCid(cid) {
 
 function getStatusBadgeClass(status) {
   switch (status?.toLowerCase()) {
-    case "funded":    return "badge-funded";
-    case "shipped":   return "badge-shipped";
-    case "delivered": return "badge-delivered";
-    case "released":  return "badge-released";
-    case "refunded":  return "badge-refunded";
-    default:          return "badge-unknown";
+    case "funded":
+      return "badge-funded";
+    case "shipped":
+      return "badge-shipped";
+    case "delivered":
+      return "badge-delivered";
+    case "released":
+      return "badge-released";
+    case "refunded":
+      return "badge-refunded";
+    default:
+      return "badge-unknown";
   }
 }
 
@@ -54,10 +60,10 @@ function getStatusBadgeClass(status) {
 // Tracking timeline
 // ---------------------------------------------------------------------------
 const TIMELINE_STEPS = [
-  { key: "funded",    label: "Funded" },
-  { key: "shipped",   label: "Shipped" },
+  { key: "funded", label: "Funded" },
+  { key: "shipped", label: "Shipped" },
   { key: "delivered", label: "Delivered" },
-  { key: "released",  label: "Released" },
+  { key: "released", label: "Released" },
 ];
 
 function getTimelineIndex(status) {
@@ -76,7 +82,7 @@ function buildTimeline(status) {
   const currentIdx = getTimelineIndex(status);
   const stepsHtml = TIMELINE_STEPS.map((step, i) => {
     let cls = "";
-    if (i < currentIdx)  cls = "ts-done";
+    if (i < currentIdx) cls = "ts-done";
     if (i === currentIdx) cls = "ts-active";
     return `<div class="tracking-step ${cls}">
       <span class="tracking-dot"></span>
@@ -102,13 +108,15 @@ async function openDisputeFromOrder(orderId, escrowId) {
   }
 
   if (!escrowId && escrowId !== 0) {
-    alert("Escrow ID not available. Please wait for the transaction to be mined.");
+    alert(
+      "Escrow ID not available. Please wait for the transaction to be mined.",
+    );
     return;
   }
 
   const confirmed = confirm(
     "Are you sure you want to open a dispute for this order? " +
-    "This should only be used if the order is stuck, damaged, or not received as described."
+      "This should only be used if the order is stuck, damaged, or not received as described.",
   );
   if (!confirmed) return;
 
@@ -126,7 +134,9 @@ async function openDisputeFromOrder(orderId, escrowId) {
 
     const txHash = await window.ethereum.request({
       method: "eth_sendTransaction",
-      params: [{ from: buyerWallet, to: disputeAddress, data: methodId + paddedId }],
+      params: [
+        { from: buyerWallet, to: disputeAddress, data: methodId + paddedId },
+      ],
     });
 
     setStatus("Saving dispute record…");
@@ -197,7 +207,7 @@ async function confirmReceivedItem(orderId, txHash) {
   }
 
   try {
-    const buyerWallet = window.DepayWallet.getSavedWallet();
+    const buyerWallet = window.DepayWallet.getSavedWallet("buyer");
     if (!buyerWallet) throw new Error("Please connect your wallet first.");
 
     const escrowAddress = window.APP_CONFIG?.escrowAddress;
@@ -207,7 +217,8 @@ async function confirmReceivedItem(orderId, txHash) {
     const orderRes = await fetch(`${API_ORDERS}/detail/${orderId}`);
     if (!orderRes.ok) throw new Error("Order not found.");
     const orderData = await orderRes.json();
-    if (!orderData.success || !orderData.order) throw new Error("Invalid order data.");
+    if (!orderData.success || !orderData.order)
+      throw new Error("Invalid order data.");
 
     let escrowId = orderData.order.escrowId;
     if (!escrowId && escrowId !== 0) {
@@ -215,29 +226,39 @@ async function confirmReceivedItem(orderId, txHash) {
       escrowId = await getEscrowIdFromTxReceipt(txHash);
       if (!escrowId) {
         throw new Error(
-          "Could not find Escrow ID. Transaction may not be mined yet — wait a moment and retry."
+          "Could not find Escrow ID. Transaction may not be mined yet — wait a moment and retry.",
         );
       }
-      await fetch(`${API_ORDERS}/${orderId}`, {
+      const updateEscrowRes = await fetch(`${API_ORDERS}/${orderId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ escrowId }),
-      }).catch(() => {});
+      });
+      if (!updateEscrowRes.ok) {
+        const errText = await updateEscrowRes.text();
+        console.warn("⚠️ Failed to save escrowId:", errText);
+      }
     }
 
     setStatus("Confirming item received on blockchain…");
-    const methodId     = "0x27dac36d"; // confirmReceived(uint256)
-    const paddedId     = BigInt(escrowId).toString(16).padStart(64, "0");
+    const methodId = "0x27dac36d"; // confirmReceived(uint256)
+    const paddedId = BigInt(escrowId).toString(16).padStart(64, "0");
     const releaseTxHash = await window.ethereum.request({
       method: "eth_sendTransaction",
-      params: [{ from: buyerWallet, to: escrowAddress, data: methodId + paddedId }],
+      params: [
+        { from: buyerWallet, to: escrowAddress, data: methodId + paddedId },
+      ],
     });
 
-    await fetch(`${API_ORDERS}/${orderId}`, {
+    const updateStatusRes = await fetch(`${API_ORDERS}/${orderId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "released", releaseTxHash }),
-    }).catch(() => {});
+    });
+    if (!updateStatusRes.ok) {
+      const errText = await updateStatusRes.text();
+      throw new Error(`Released on-chain, but DB update failed: ${errText}`);
+    }
 
     setStatus("✅ Item marked as received! Funds released to seller.", "ok");
     setTimeout(() => loadBuyerOrders(), 2000);
@@ -254,7 +275,9 @@ async function simulateDelivery(orderId) {
   setStatus("⏳ Asking oracle to simulate delivery…");
 
   try {
-    const res  = await fetch(`${API_ORACLE}/simulate/${orderId}`, { method: "POST" });
+    const res = await fetch(`${API_ORACLE}/simulate/${orderId}`, {
+      method: "POST",
+    });
     const data = await res.json();
 
     if (!res.ok) {
@@ -263,7 +286,7 @@ async function simulateDelivery(orderId) {
 
     setStatus(
       `✅ Oracle released escrow! TX: ${shortenHash(data.releaseTxHash)}`,
-      "ok"
+      "ok",
     );
     setTimeout(() => loadBuyerOrders(), 2500);
   } catch (err) {
@@ -276,9 +299,9 @@ async function simulateDelivery(orderId) {
 // Render order card HTML
 // ---------------------------------------------------------------------------
 function renderOrder(order) {
-  const status     = (order.status || "unknown").toLowerCase();
+  const status = (order.status || "unknown").toLowerCase();
   const badgeClass = getStatusBadgeClass(status);
-  const shortId    = order._id?.toString?.().slice(-8) || "?";
+  const shortId = order._id?.toString?.().slice(-8) || "?";
 
   const itemsHtml = (order.items || [])
     .map(
@@ -287,7 +310,7 @@ function renderOrder(order) {
           <strong>${item.title}</strong>
           x ${normalizeQuantity(item.quantity)}
           = ${Number(item.amountXsgd || 0).toFixed(2)} HLUSD
-        </div>`
+        </div>`,
     )
     .join("");
 
@@ -310,29 +333,39 @@ function renderOrder(order) {
   let actionsHtml = "";
   if (status === "funded") {
     actionsHtml = `
-      <button type="button" class="button" data-confirm-btn="${order._id}" data-tx-hash="${order.txHash || ""}">
+      <button type="button" class="button" data-confirm-btn="${
+        order._id
+      }" data-tx-hash="${order.txHash || ""}">
         Item Received — Release Funds
       </button>
-      <button type="button" class="btn-open-dispute" data-dispute-btn="${order._id}" data-escrow-id="${order.escrowId || ""}" title="Open a dispute if order is stuck or problematic">
-        ⚖️ Open Dispute
-      </button>
-      <button type="button" class="btn-simulate" data-simulate-btn="${order._id}" title="Demo: bypass wait timers and release immediately">
+      <button type="button" class="btn-simulate" data-simulate-btn="${
+        order._id
+      }" title="Demo: bypass wait timers and release immediately">
         🤖 Simulate Delivery (Demo)
       </button>`;
   } else if (status === "shipped") {
     actionsHtml = `
-      <button type="button" class="btn-open-dispute" data-dispute-btn="${order._id}" data-escrow-id="${order.escrowId || ""}" title="Open a dispute if package is stuck">
+      <button type="button" class="btn-open-dispute" data-dispute-btn="${
+        order._id
+      }" data-escrow-id="${
+      order.escrowId || ""
+    }" title="Open a dispute if package is stuck">
         ⚖️ Open Dispute
       </button>
-      <button type="button" class="btn-simulate" data-simulate-btn="${order._id}" title="Demo: skip wait and release immediately">
+      <button type="button" class="btn-simulate" data-simulate-btn="${
+        order._id
+      }" title="Demo: skip wait and release immediately">
         🤖 Simulate Delivery (Demo)
       </button>`;
   } else {
     const msg =
-      status === "released"  ? "Funds released to seller." :
-      status === "refunded"  ? "Funds refunded to buyer."  :
-      status === "delivered" ? "Awaiting oracle release…"  :
-      "Pending.";
+      status === "released"
+        ? "Funds released to seller."
+        : status === "refunded"
+        ? "Funds refunded to buyer."
+        : status === "delivered"
+        ? "Awaiting oracle release…"
+        : "Pending.";
     actionsHtml = `<p class="muted">${msg}</p>`;
   }
 
@@ -349,29 +382,49 @@ function renderOrder(order) {
       <div class="order-items" style="margin-top:0.6rem">${itemsHtml}</div>
 
       <div class="order-details">
-        <p><strong>Total:</strong> ${Number(order.amountHlusd || 0).toFixed(2)} HLUSD</p>
+        <p><strong>Total:</strong> ${Number(order.amountHlusd || 0).toFixed(
+          2,
+        )} HLUSD</p>
         <p><strong>Date:</strong> ${formatDate(order.createdAt)}</p>
-        <p><strong>Payment TX:</strong> <code>${shortenHash(order.txHash)}</code></p>
-        ${order.escrowId != null
-          ? `<p><strong>Escrow ID:</strong> ${order.escrowId}</p>`
-          : ""}
-        ${order.ipfsCid
-          ? `<p><strong>IPFS Record:</strong>
-              <a href="${order.ipfsGatewayUrl || `https://gateway.pinata.cloud/ipfs/${order.ipfsCid}`}"
+        <p><strong>Payment TX:</strong> <code>${shortenHash(
+          order.txHash,
+        )}</code></p>
+        ${
+          order.escrowId != null
+            ? `<p><strong>Escrow ID:</strong> ${order.escrowId}</p>`
+            : ""
+        }
+        ${
+          order.ipfsCid
+            ? `<p><strong>IPFS Record:</strong>
+              <a href="${
+                order.ipfsGatewayUrl ||
+                `https://gateway.pinata.cloud/ipfs/${order.ipfsCid}`
+              }"
                  target="_blank" rel="noopener noreferrer">
                 <code>${shortenCid(order.ipfsCid)}</code>
               </a></p>`
-          : ""}
-        ${order.releaseTxHash
-          ? `<p><strong>Release TX:</strong> <code>${shortenHash(order.releaseTxHash)}</code></p>`
-          : ""}
-        ${order.lastUpdateIpfsCid
-          ? `<p><strong>Last Update IPFS:</strong>
-              <a href="${order.lastUpdateIpfsGatewayUrl || `https://gateway.pinata.cloud/ipfs/${order.lastUpdateIpfsCid}`}"
+            : ""
+        }
+        ${
+          order.releaseTxHash
+            ? `<p><strong>Release TX:</strong> <code>${shortenHash(
+                order.releaseTxHash,
+              )}</code></p>`
+            : ""
+        }
+        ${
+          order.lastUpdateIpfsCid
+            ? `<p><strong>Last Update IPFS:</strong>
+              <a href="${
+                order.lastUpdateIpfsGatewayUrl ||
+                `https://gateway.pinata.cloud/ipfs/${order.lastUpdateIpfsCid}`
+              }"
                  target="_blank" rel="noopener noreferrer">
                 <code>${shortenCid(order.lastUpdateIpfsCid)}</code>
               </a></p>`
-          : ""}
+            : ""
+        }
       </div>
 
       <div class="order-actions">${actionsHtml}</div>
@@ -382,10 +435,11 @@ function renderOrder(order) {
 // Load all orders for the connected buyer
 // ---------------------------------------------------------------------------
 async function loadBuyerOrders() {
-  const buyerWallet = window.DepayWallet?.getSavedWallet();
+  const buyerWallet = window.DepayWallet?.getSavedWallet("buyer");
 
   if (!buyerWallet) {
-    ordersListEl.innerHTML = '<p class="muted">Please connect your wallet to view orders.</p>';
+    ordersListEl.innerHTML =
+      '<p class="muted">Please connect your wallet to view orders.</p>';
     ordersCountEl.textContent = "No wallet connected";
     setStatus("Connect wallet to view your orders.", "error");
     return;
@@ -396,7 +450,7 @@ async function loadBuyerOrders() {
 
   try {
     const response = await fetch(
-      `${API_ORDERS}/buyer/${encodeURIComponent(buyerWallet)}`
+      `${API_ORDERS}/buyer/${encodeURIComponent(buyerWallet)}`,
     );
     const payload = await response.json();
 
@@ -413,7 +467,9 @@ async function loadBuyerOrders() {
       return;
     }
 
-    ordersCountEl.textContent = `${orders.length} order${orders.length !== 1 ? "s" : ""}`;
+    ordersCountEl.textContent = `${orders.length} order${
+      orders.length !== 1 ? "s" : ""
+    }`;
 
     const html = orders.map(renderOrder).join("");
     ordersListEl.innerHTML = `<div class="orders-list">${html}</div>`;
@@ -421,20 +477,25 @@ async function loadBuyerOrders() {
     // Attach confirm-received listeners
     ordersListEl.querySelectorAll("[data-confirm-btn]").forEach((btn) => {
       btn.addEventListener("click", () =>
-        confirmReceivedItem(btn.dataset.confirmBtn, btn.dataset.txHash || "")
+        confirmReceivedItem(btn.dataset.confirmBtn, btn.dataset.txHash || ""),
       );
     });
 
     // Attach dispute listeners
     ordersListEl.querySelectorAll("[data-dispute-btn]").forEach((btn) => {
       btn.addEventListener("click", () =>
-        openDisputeFromOrder(btn.dataset.disputeBtn, btn.dataset.escrowId || "")
+        openDisputeFromOrder(
+          btn.dataset.disputeBtn,
+          btn.dataset.escrowId || "",
+        ),
       );
     });
 
     // Attach simulate-delivery listeners
     ordersListEl.querySelectorAll("[data-simulate-btn]").forEach((btn) => {
-      btn.addEventListener("click", () => simulateDelivery(btn.dataset.simulateBtn));
+      btn.addEventListener("click", () =>
+        simulateDelivery(btn.dataset.simulateBtn),
+      );
     });
 
     setStatus("Orders loaded.", "ok");

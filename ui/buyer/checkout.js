@@ -164,12 +164,12 @@ async function connectWalletIfNeeded() {
     throw new Error("Wallet utilities are not loaded.");
   }
 
-  const saved = window.DepayWallet.getSavedWallet();
+  const saved = window.DepayWallet.getSavedWallet("buyer");
   if (saved) {
     return saved;
   }
 
-  return window.DepayWallet.requestWalletConnection();
+  return window.DepayWallet.requestWalletConnection("buyer");
 }
 
 async function switchToHelaNetwork() {
@@ -233,6 +233,39 @@ async function waitForTxReceipt(txHash, maxTries = 30) {
   }
 
   return null;
+}
+
+async function sendTransactionWithRetry(params, maxRetries = 3) {
+  let lastError;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const txHash = await window.ethereum.request({
+        method: "eth_sendTransaction",
+        params: [params],
+      });
+      return txHash;
+    } catch (error) {
+      lastError = error;
+      // Check if it's a rate limit or temporary error
+      const isRateLimitError =
+        error.code === -32002 ||
+        error.message?.includes("too many errors") ||
+        error.message?.includes("rate limit");
+
+      if (isRateLimitError && attempt < maxRetries) {
+        const waitMs = Math.pow(2, attempt) * 1000; // exponential backoff: 2s, 4s, 8s
+        console.warn(
+          `⚠️ RPC rate limit detected. Retrying in ${
+            waitMs / 1000
+          }s (attempt ${attempt}/${maxRetries})...`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+      } else {
+        throw error;
+      }
+    }
+  }
+  throw lastError;
 }
 
 function extractEscrowIdFromReceipt(receipt, escrowAddress) {
@@ -313,17 +346,12 @@ async function paySelectedItems() {
         orderRef: orderRef,
       });
 
-      // call createEscrow
-      const txHash = await window.ethereum.request({
-        method: "eth_sendTransaction",
-        params: [
-          {
-            from: fromWallet,
-            to: escrowAddress,
-            value: toNativeHex(subtotalXsgd),
-            data: generateCreateEscrowData(item.sellerWallet, orderRefHex),
-          },
-        ],
+      // call createEscrow with retry logic
+      const txHash = await sendTransactionWithRetry({
+        from: fromWallet,
+        to: escrowAddress,
+        value: toNativeHex(subtotalXsgd),
+        data: generateCreateEscrowData(item.sellerWallet, orderRefHex),
       });
 
       console.log("✅ Transaction sent:", txHash);

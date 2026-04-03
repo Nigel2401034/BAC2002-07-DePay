@@ -1,9 +1,16 @@
 function initSellerNavbar(root = document) {
-  const connectWalletBtn = root.getElementById("connectWalletBtn") || document.getElementById("connectWalletBtn");
-  const walletStatus = root.getElementById("walletStatus") || document.getElementById("walletStatus");
-  const walletMenuLabel = root.getElementById("walletMenuLabel") || document.getElementById("walletMenuLabel");
+  const connectWalletBtn =
+    root.getElementById("connectWalletBtn") ||
+    document.getElementById("connectWalletBtn");
+  const walletStatus =
+    root.getElementById("walletStatus") ||
+    document.getElementById("walletStatus");
+  const walletMenuLabel =
+    root.getElementById("walletMenuLabel") ||
+    document.getElementById("walletMenuLabel");
 
   const walletApi = window.DepayWallet;
+  const walletRole = "seller";
 
   if (!connectWalletBtn || !walletStatus || !walletMenuLabel) {
     return;
@@ -12,7 +19,9 @@ function initSellerNavbar(root = document) {
   function renderWallet(wallet) {
     const connected = Boolean(wallet);
 
-    walletMenuLabel.textContent = `MetaMask: ${connected ? "Connected" : "Disconnected"}`;
+    walletMenuLabel.textContent = `MetaMask: ${
+      connected ? "Connected" : "Disconnected"
+    }`;
 
     if (!connected) {
       walletStatus.hidden = true;
@@ -28,30 +37,6 @@ function initSellerNavbar(root = document) {
     connectWalletBtn.style.display = "none";
   }
 
-  async function syncWalletFromProvider() {
-    if (!window.ethereum) {
-      return;
-    }
-
-    try {
-      const accounts = await window.ethereum.request({ method: "eth_accounts" });
-      const providerWallet = accounts && accounts[0] ? accounts[0] : "";
-
-      if (walletApi) {
-        if (providerWallet) {
-          walletApi.saveWallet(providerWallet);
-        } else {
-          walletApi.clearWallet();
-        }
-      }
-
-      renderWallet(providerWallet);
-    } catch {
-      const savedWallet = walletApi ? walletApi.getSavedWallet() : "";
-      renderWallet(savedWallet);
-    }
-  }
-
   async function connectWallet() {
     if (!walletApi) {
       walletStatus.textContent = "Wallet utilities not loaded.";
@@ -60,7 +45,7 @@ function initSellerNavbar(root = document) {
     }
 
     try {
-      const wallet = await walletApi.requestWalletConnection();
+      const wallet = await walletApi.requestWalletConnection(walletRole);
       renderWallet(wallet);
     } catch (error) {
       walletStatus.textContent = `Connection failed: ${error.message}`;
@@ -70,23 +55,8 @@ function initSellerNavbar(root = document) {
 
   connectWalletBtn.addEventListener("click", connectWallet);
 
-  const savedWallet = walletApi ? walletApi.getSavedWallet() : "";
+  const savedWallet = walletApi ? walletApi.getSavedWallet(walletRole) : "";
   renderWallet(savedWallet);
-  syncWalletFromProvider();
-
-  if (window.ethereum) {
-    window.ethereum.on("accountsChanged", (accounts) => {
-      const wallet = accounts && accounts[0] ? accounts[0] : "";
-      if (walletApi) {
-        if (wallet) {
-          walletApi.saveWallet(wallet);
-        } else {
-          walletApi.clearWallet();
-        }
-      }
-      renderWallet(wallet);
-    });
-  }
 }
 
 window.initSellerNavbar = initSellerNavbar;
