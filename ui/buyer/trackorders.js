@@ -108,13 +108,15 @@ async function openDisputeFromOrder(orderId, escrowId) {
   }
 
   if (!escrowId && escrowId !== 0) {
-    alert("Escrow ID not available. Please wait for the transaction to be mined.");
+    alert(
+      "Escrow ID not available. Please wait for the transaction to be mined.",
+    );
     return;
   }
 
   const confirmed = confirm(
     "Are you sure you want to open a dispute for this order? " +
-    "This should only be used if the order is stuck, damaged, or not received as described."
+      "This should only be used if the order is stuck, damaged, or not received as described.",
   );
   if (!confirmed) return;
 
@@ -132,7 +134,9 @@ async function openDisputeFromOrder(orderId, escrowId) {
 
     const txHash = await window.ethereum.request({
       method: "eth_sendTransaction",
-      params: [{ from: buyerWallet, to: disputeAddress, data: methodId + paddedId }],
+      params: [
+        { from: buyerWallet, to: disputeAddress, data: methodId + paddedId },
+      ],
     });
 
     setStatus("Saving dispute record…");
@@ -225,11 +229,15 @@ async function confirmReceivedItem(orderId, txHash) {
           "Could not find Escrow ID. Transaction may not be mined yet — wait a moment and retry.",
         );
       }
-      await fetch(`${API_ORDERS}/${orderId}`, {
+      const updateEscrowRes = await fetch(`${API_ORDERS}/${orderId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ escrowId }),
-      }).catch(() => {});
+      });
+      if (!updateEscrowRes.ok) {
+        const errText = await updateEscrowRes.text();
+        console.warn("⚠️ Failed to save escrowId:", errText);
+      }
     }
 
     setStatus("Confirming item received on blockchain…");
@@ -242,11 +250,15 @@ async function confirmReceivedItem(orderId, txHash) {
       ],
     });
 
-    await fetch(`${API_ORDERS}/${orderId}`, {
+    const updateStatusRes = await fetch(`${API_ORDERS}/${orderId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "released", releaseTxHash }),
-    }).catch(() => {});
+    });
+    if (!updateStatusRes.ok) {
+      const errText = await updateStatusRes.text();
+      throw new Error(`Released on-chain, but DB update failed: ${errText}`);
+    }
 
     setStatus("✅ Item marked as received! Funds released to seller.", "ok");
     setTimeout(() => loadBuyerOrders(), 2000);
@@ -326,15 +338,23 @@ function renderOrder(order) {
       }" data-tx-hash="${order.txHash || ""}">
         Item Received — Release Funds
       </button>
-      <button type="button" class="btn-simulate" data-simulate-btn="${order._id}" title="Demo: bypass wait timers and release immediately">
+      <button type="button" class="btn-simulate" data-simulate-btn="${
+        order._id
+      }" title="Demo: bypass wait timers and release immediately">
         🤖 Simulate Delivery (Demo)
       </button>`;
   } else if (status === "shipped") {
     actionsHtml = `
-      <button type="button" class="btn-open-dispute" data-dispute-btn="${order._id}" data-escrow-id="${order.escrowId || ""}" title="Open a dispute if package is stuck">
+      <button type="button" class="btn-open-dispute" data-dispute-btn="${
+        order._id
+      }" data-escrow-id="${
+      order.escrowId || ""
+    }" title="Open a dispute if package is stuck">
         ⚖️ Open Dispute
       </button>
-      <button type="button" class="btn-simulate" data-simulate-btn="${order._id}" title="Demo: skip wait and release immediately">
+      <button type="button" class="btn-simulate" data-simulate-btn="${
+        order._id
+      }" title="Demo: skip wait and release immediately">
         🤖 Simulate Delivery (Demo)
       </button>`;
   } else {
@@ -464,7 +484,10 @@ async function loadBuyerOrders() {
     // Attach dispute listeners
     ordersListEl.querySelectorAll("[data-dispute-btn]").forEach((btn) => {
       btn.addEventListener("click", () =>
-        openDisputeFromOrder(btn.dataset.disputeBtn, btn.dataset.escrowId || "")
+        openDisputeFromOrder(
+          btn.dataset.disputeBtn,
+          btn.dataset.escrowId || "",
+        ),
       );
     });
 

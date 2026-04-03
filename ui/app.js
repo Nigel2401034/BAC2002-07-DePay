@@ -35,14 +35,6 @@
       throw new Error("MetaMask not found. Install MetaMask extension first.");
     }
 
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
-    const wallet = accounts && accounts[0] ? accounts[0] : "";
-    if (!wallet) {
-      throw new Error("No wallet account returned by MetaMask.");
-    }
-
     if (window.APP_CONFIG && window.APP_CONFIG.expectedChainIdHex) {
       const currentChainId = await window.ethereum.request({
         method: "eth_chainId",
@@ -51,8 +43,25 @@
         currentChainId.toLowerCase() !==
         window.APP_CONFIG.expectedChainIdHex.toLowerCase()
       ) {
-        throw new Error(`Wrong network (${currentChainId}).`);
+        try {
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: window.APP_CONFIG.expectedChainIdHex }],
+          });
+        } catch (switchError) {
+          throw new Error(
+            `Wrong network (${currentChainId}). Please switch MetaMask to ${window.APP_CONFIG.expectedChainIdHex} and try again.`,
+          );
+        }
       }
+    }
+
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    const wallet = accounts && accounts[0] ? accounts[0] : "";
+    if (!wallet) {
+      throw new Error("No wallet account returned by MetaMask.");
     }
 
     saveWallet(wallet, role);

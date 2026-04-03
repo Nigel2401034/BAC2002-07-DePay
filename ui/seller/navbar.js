@@ -57,29 +57,6 @@ function initSellerNavbar(root = document) {
 
   const savedWallet = walletApi ? walletApi.getSavedWallet(walletRole) : "";
   renderWallet(savedWallet);
-
-  if (window.ethereum) {
-    window.ethereum.on("accountsChanged", (accounts) => {
-      const wallet = accounts && accounts[0] ? accounts[0] : "";
-      const hasConnectedSeller = walletApi
-        ? Boolean(walletApi.getSavedWallet(walletRole))
-        : false;
-
-      if (!hasConnectedSeller) {
-        renderWallet("");
-        return;
-      }
-
-      if (walletApi) {
-        if (wallet) {
-          walletApi.saveWallet(wallet, walletRole);
-        } else {
-          walletApi.clearWallet(walletRole);
-        }
-      }
-      renderWallet(wallet);
-    });
-  }
 }
 
 window.initSellerNavbar = initSellerNavbar;
