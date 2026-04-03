@@ -5,6 +5,7 @@ const MONGO_URI =
 const DB_NAME = "listings";
 const COLLECTION_NAME = "listings";
 const ORDERS_COLLECTION_NAME = "escrow_orders";
+const DISPUTES_COLLECTION_NAME = "disputes";
 
 let db;
 let client;
@@ -25,6 +26,15 @@ async function connectDB() {
     await db
       .collection(ORDERS_COLLECTION_NAME)
       .createIndex({ txHash: 1 }, { unique: true });
+    await db
+      .collection(DISPUTES_COLLECTION_NAME)
+      .createIndex({ buyer: 1, createdAt: -1 });
+    await db
+      .collection(DISPUTES_COLLECTION_NAME)
+      .createIndex({ seller: 1, createdAt: -1 });
+    await db
+      .collection(DISPUTES_COLLECTION_NAME)
+      .createIndex({ escrowId: 1 }, { unique: true });
     console.log("✅ Connected to MongoDB");
     return db;
   } catch (error) {
@@ -124,6 +134,14 @@ async function getEscrowOrdersByBuyer(buyerWallet) {
     .toArray();
 }
 
+async function getEscrowOrdersBySeller(sellerWallet) {
+  const collection = db.collection(ORDERS_COLLECTION_NAME);
+  return await collection
+    .find({ sellerWallet: sellerWallet.toLowerCase() })
+    .sort({ createdAt: -1 })
+    .toArray();
+}
+
 async function getEscrowOrderById(orderId) {
   const collection = db.collection(ORDERS_COLLECTION_NAME);
   return await collection.findOne({ _id: new ObjectId(orderId) });
@@ -141,6 +159,47 @@ async function updateEscrowOrder(orderId, updateData) {
 async function getEscrowOrderByTxHash(txHash) {
   const collection = db.collection(ORDERS_COLLECTION_NAME);
   return await collection.findOne({ txHash: txHash.toLowerCase() });
+}
+
+async function createDispute(disputeData) {
+  const collection = db.collection(DISPUTES_COLLECTION_NAME);
+  const result = await collection.insertOne({
+    ...disputeData,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    state: 0,
+  });
+  return result.insertedId;
+}
+
+async function getDisputesByBuyer(buyerWallet) {
+  const collection = db.collection(DISPUTES_COLLECTION_NAME);
+  return await collection
+    .find({ buyer: buyerWallet.toLowerCase() })
+    .sort({ createdAt: -1 })
+    .toArray();
+}
+
+async function getDisputesBySeller(sellerWallet) {
+  const collection = db.collection(DISPUTES_COLLECTION_NAME);
+  return await collection
+    .find({ seller: sellerWallet.toLowerCase() })
+    .sort({ createdAt: -1 })
+    .toArray();
+}
+
+async function getDisputeByEscrowId(escrowId) {
+  const collection = db.collection(DISPUTES_COLLECTION_NAME);
+  return await collection.findOne({ escrowId: parseInt(escrowId) });
+}
+
+async function updateDispute(escrowId, updateData) {
+  const collection = db.collection(DISPUTES_COLLECTION_NAME);
+  const result = await collection.updateOne(
+    { escrowId: parseInt(escrowId) },
+    { $set: { ...updateData, updatedAt: new Date() } },
+  );
+  return result.modifiedCount > 0;
 }
 
 async function closeDB() {
@@ -163,7 +222,13 @@ module.exports = {
   upsertListingBySeedKey,
   createEscrowOrder,
   getEscrowOrdersByBuyer,
+  getEscrowOrdersBySeller,
   getEscrowOrderById,
   updateEscrowOrder,
   getEscrowOrderByTxHash,
+  createDispute,
+  getDisputesByBuyer,
+  getDisputesBySeller,
+  getDisputeByEscrowId,
+  updateDispute,
 };

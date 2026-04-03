@@ -5,6 +5,7 @@ const path = require("path");
 const db = require("./db");
 const listingsRouter = require("./routes");
 const ordersRouter = require("./orders-routes");
+const disputesRouter = require("./disputes-routes");
 const oracleRouter = require("../oracle/oracle-routes");
 const { seedListingsOnStartup } = require('./seed-listings');
 
@@ -48,6 +49,7 @@ app.get("/health", (req, res) => {
 // API Routes
 app.use("/api/listings", listingsRouter);
 app.use("/api/orders", ordersRouter);
+app.use("/api/disputes", disputesRouter);
 app.use("/api/oracle", oracleRouter);
 
 // Serve index.html for root path

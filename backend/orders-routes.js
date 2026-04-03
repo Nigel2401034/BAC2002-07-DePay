@@ -49,8 +49,12 @@ router.post("/", async (req, res) => {
         .slice(0, 16)}-${Date.now()}`,
     );
 
+    // Extract seller from first item (all items should be from same seller in typical flow)
+    const sellerWallet = items.length > 0 ? items[0].sellerWallet : null;
+
     const orderData = {
       buyerWallet: buyerWallet.toLowerCase(),
+      sellerWallet: sellerWallet ? sellerWallet.toLowerCase() : null,
       items,
       txHash: txHash.toLowerCase(),
       amountHlusd,
@@ -87,6 +91,21 @@ router.get("/buyer/:buyer", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error fetching buyer orders:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/orders/seller/:seller - Get all orders for a seller wallet
+router.get("/seller/:seller", async (req, res) => {
+  try {
+    const orders = await db.getEscrowOrdersBySeller(req.params.seller);
+    res.json({
+      success: true,
+      total: orders.length,
+      orders,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching seller orders:", error);
     res.status(500).json({ error: error.message });
   }
 });

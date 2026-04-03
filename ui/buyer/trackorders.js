@@ -94,6 +94,68 @@ function buildTimeline(status) {
 }
 
 // ---------------------------------------------------------------------------
+// Open dispute (buyer action for stuck/problematic orders)
+// ---------------------------------------------------------------------------
+async function openDisputeFromOrder(orderId, escrowId) {
+  if (!window.ethereum) {
+    alert("MetaMask is required to open disputes.");
+    return;
+  }
+
+  if (!window.DepayWallet) {
+    alert("Wallet utilities not loaded.");
+    return;
+  }
+
+  if (!escrowId && escrowId !== 0) {
+    alert("Escrow ID not available. Please wait for the transaction to be mined.");
+    return;
+  }
+
+  const confirmed = confirm(
+    "Are you sure you want to open a dispute for this order? " +
+    "This should only be used if the order is stuck, damaged, or not received as described."
+  );
+  if (!confirmed) return;
+
+  try {
+    const buyerWallet = window.DepayWallet.getSavedWallet();
+    if (!buyerWallet) throw new Error("Please connect your wallet first.");
+
+    const disputeAddress = window.APP_CONFIG?.disputeAddress;
+    if (!disputeAddress) throw new Error("Dispute contract not configured.");
+
+    setStatus("Opening dispute on blockchain…");
+
+    const methodId = "0x1e7f0e93"; // openDispute(uint256)
+    const paddedId = BigInt(escrowId).toString(16).padStart(64, "0");
+
+    const txHash = await window.ethereum.request({
+      method: "eth_sendTransaction",
+      params: [{ from: buyerWallet, to: disputeAddress, data: methodId + paddedId }],
+    });
+
+    setStatus("Saving dispute record…");
+    await fetch("http://localhost:5000/api/disputes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderId,
+        escrowId,
+        buyer: buyerWallet,
+        txHash,
+      }),
+    }).catch(() => {});
+
+    setStatus("✅ Dispute opened! Check the Disputes page for updates.", "ok");
+    setTimeout(() => loadBuyerOrders(), 2500);
+  } catch (err) {
+    console.error("openDisputeFromOrder error:", err);
+    setStatus(`Failed to open dispute: ${err.message}`, "error");
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Manual buyer release (existing flow — buyer signs confirmReceived)
 // ---------------------------------------------------------------------------
 async function getEscrowIdFromTxReceipt(txHash) {
@@ -264,13 +326,14 @@ function renderOrder(order) {
       }" data-tx-hash="${order.txHash || ""}">
         Item Received — Release Funds
       </button>
-      <button type="button" class="btn-simulate" data-simulate-btn="${
-        order._id
-      }" title="Demo: bypass wait timers and release immediately">
+      <button type="button" class="btn-simulate" data-simulate-btn="${order._id}" title="Demo: bypass wait timers and release immediately">
         🤖 Simulate Delivery (Demo)
       </button>`;
   } else if (status === "shipped") {
     actionsHtml = `
+      <button type="button" class="btn-open-dispute" data-dispute-btn="${order._id}" data-escrow-id="${order.escrowId || ""}" title="Open a dispute if package is stuck">
+        ⚖️ Open Dispute
+      </button>
       <button type="button" class="btn-simulate" data-simulate-btn="${order._id}" title="Demo: skip wait and release immediately">
         🤖 Simulate Delivery (Demo)
       </button>`;
@@ -395,6 +458,13 @@ async function loadBuyerOrders() {
     ordersListEl.querySelectorAll("[data-confirm-btn]").forEach((btn) => {
       btn.addEventListener("click", () =>
         confirmReceivedItem(btn.dataset.confirmBtn, btn.dataset.txHash || ""),
+      );
+    });
+
+    // Attach dispute listeners
+    ordersListEl.querySelectorAll("[data-dispute-btn]").forEach((btn) => {
+      btn.addEventListener("click", () =>
+        openDisputeFromOrder(btn.dataset.disputeBtn, btn.dataset.escrowId || "")
       );
     });
 
