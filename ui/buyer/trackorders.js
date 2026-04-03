@@ -333,10 +333,12 @@ function renderOrder(order) {
   let actionsHtml = "";
   if (status === "funded") {
     actionsHtml = `
-      <button type="button" class="button" data-confirm-btn="${
+      <button type="button" class="btn-open-dispute" data-dispute-btn="${
         order._id
-      }" data-tx-hash="${order.txHash || ""}">
-        Item Received — Release Funds
+      }" data-escrow-id="${
+      order.escrowId || ""
+    }" title="Open a dispute if there's an issue with this order">
+        ⚖️ Open Dispute
       </button>
       <button type="button" class="btn-simulate" data-simulate-btn="${
         order._id
